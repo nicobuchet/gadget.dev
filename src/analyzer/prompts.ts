@@ -85,34 +85,37 @@ Determine the Playwright actions needed and respond with the JSON array.`;
 // ── Audit Prompts ──
 
 export function auditSystemPrompt(): string {
-  return `You are a senior QA lead performing a production readiness review for a web application.
-You will receive the full results of an automated E2E test suite, including test outcomes, error details, and screenshots of failures.
+  return `You are a beta tester manually testing a web application. You are looking at real screenshots of the application as a user navigates through it.
 
-Your job is to:
-1. Assess whether the application is ready for production.
-2. Provide structured findings categorized by severity.
-3. Deduplicate: if the same root cause appears across multiple tests, report it as ONE finding referencing all affected tests.
-4. Distinguish between real application bugs and test infrastructure issues.
-5. Look beyond pass/fail — suggest UX improvements even for passing flows if you notice issues in the screenshots.
+Your job is to review the UI and UX as if you were a real user, and provide feedback on what you see in the screenshots. Focus on:
+1. Does the UI look correct? Are there visual bugs, broken layouts, overlapping elements, missing content?
+2. Does the flow feel intuitive? Is the user experience smooth or confusing?
+3. Are there loading states, error messages, or empty states that look wrong?
+4. Is the content readable? Are labels, buttons, and text clear and well-placed?
+5. Are there any visual regressions, alignment issues, or styling problems?
+
+IMPORTANT: You are reviewing the APPLICATION, not the tests. Do NOT comment on test coverage, test quality, test methodology, security practices, or password strength. Only report what you can actually see in the screenshots as a user would experience it.
+
+If a flow fails (a step did not succeed), report what went wrong from the USER's perspective — e.g. "the page shows an error after clicking Submit" or "the form does not respond to the click".
 
 Severity levels:
-- "critical": Must be fixed before production. Broken core flows, data loss risks, security issues.
-- "warning": Problems that might block some users or degrade experience significantly. Not severe enough for critical.
-- "nitpick": Small details worth addressing to improve UX — cosmetic issues, minor inconsistencies.
-- "improvement": Suggestions for future versions — feature ideas, UX enhancements, accessibility improvements.
+- "critical": Broken UI that prevents the user from completing the flow. Blank pages, crashes, forms that don't submit, navigation that leads nowhere.
+- "warning": UI problems that degrade the experience for some users. Hard-to-read text, confusing layout, misleading labels, slow transitions visible in screenshots.
+- "nitpick": Small visual details — spacing inconsistencies, alignment issues, truncated text, minor styling imperfections.
+- "improvement": UX suggestions based on what you see — better button placement, clearer labels, more informative empty states, visual hierarchy improvements.
 
 Respond ONLY with a JSON object matching this schema:
 {
   "verdict": {
     "readiness": "ready" | "not-ready" | "needs-attention",
     "confidence": 0.0 to 1.0,
-    "summary": "holistic paragraph assessing the application state"
+    "summary": "holistic paragraph assessing the application from a user perspective"
   },
   "findings": [
     {
       "severity": "critical" | "warning" | "nitpick" | "improvement",
       "title": "short descriptive title",
-      "description": "detailed explanation with context and recommendation",
+      "description": "detailed explanation of what you see and your recommendation",
       "relatedTest": "test name (optional)",
       "relatedStep": step_index_number (optional)
     }
@@ -120,49 +123,40 @@ Respond ONLY with a JSON object matching this schema:
 }
 
 Guidelines for the verdict:
-- "ready": All critical flows work. Minor issues may exist but nothing blocks production.
-- "not-ready": Critical failures exist. Core flows are broken.
-- "needs-attention": No critical failures but significant warnings that should be reviewed before release.`;
+- "ready": The UI works and looks good. The user can complete all tested flows without issues.
+- "not-ready": There are broken screens or flows that prevent users from completing core tasks.
+- "needs-attention": The flows work but there are visible UI/UX problems worth fixing before release.
+
+If you have no screenshots to review, base your verdict only on whether the flows succeeded or failed.`;
 }
 
 export function auditUserPrompt(
   suiteResult: SuiteResult,
   testDescriptions: Array<{ name: string; steps: string[] }>,
 ): string {
-  const summary = `## Suite Summary
-- Suite: ${suiteResult.name}
-- Total tests: ${suiteResult.tests.length}
-- Passed: ${suiteResult.passed}
-- Failed: ${suiteResult.failed}
-- Skipped: ${suiteResult.skipped}
-- Duration: ${suiteResult.duration}ms`;
+  const flowSummaries = suiteResult.tests.map((test: TestResult) => {
+    const outcome = test.status === "pass" ? "completed successfully" : "failed";
+    const failedSteps = test.steps
+      .map((step: StepResult, i: number) => ({ step, index: i }))
+      .filter(({ step }) => step.status === "fail")
+      .map(({ step, index }) => `  - Step ${index} failed: ${step.error ?? "unknown error"}`)
+      .join("\n");
 
-  const testsDetail = suiteResult.tests.map((test: TestResult) => {
-    const stepsDetail = test.steps.map((step: StepResult, i: number) => {
-      let line = `  Step ${i}: [${step.status}] ${JSON.stringify(step.step)}`;
-      if (step.error) line += `\n    Error: ${step.error}`;
-      if (step.analysis) {
-        line += `\n    Analysis: ${step.analysis.summary} (${step.analysis.category})`;
-        if (step.analysis.suggestedFix) line += `\n    Suggested fix: ${step.analysis.suggestedFix}`;
-      }
-      return line;
-    }).join("\n");
-
-    return `### ${test.name} [${test.status}] (${test.duration}ms)
-${stepsDetail}`;
+    return `### ${test.name} — ${outcome}
+${failedSteps ? `Failed steps:\n${failedSteps}` : "All steps passed."}`;
   }).join("\n\n");
 
   const flowDescriptions = testDescriptions.map(t =>
-    `### ${t.name}\n${t.steps.map((s, i) => `  ${i}. ${s}`).join("\n")}`
+    `### ${t.name}\nUser journey:\n${t.steps.map((s, i) => `  ${i}. ${s}`).join("\n")}`
   ).join("\n\n");
 
-  return `${summary}
+  return `The screenshots above show what the user sees at each step of the following flows. Review them as a beta tester would.
 
-## Test Results
-${testsDetail}
-
-## Flow Descriptions
+## Flows Tested
 ${flowDescriptions}
 
-Analyze the full suite results and screenshots, then provide your production readiness assessment as JSON.`;
+## Outcomes
+${flowSummaries}
+
+Look at each screenshot carefully and provide your feedback on the UI and user experience as JSON.`;
 }

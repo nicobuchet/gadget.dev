@@ -243,15 +243,17 @@ gadget providers            List available AI providers and their status
 
 ## Audit Command
 
-The `audit` command goes beyond pass/fail: it runs all tests, then sends the full results and failure screenshots to Claude for a holistic production readiness assessment.
+The `audit` command turns Gadget into an **AI beta tester**. It runs all test flows with screenshots captured at every step, then sends them to Claude to review the actual UI — exactly as a human tester would.
 
 ```bash
 npx gadget audit tests/ --base-url https://staging.myapp.com
 ```
 
+The AI looks at each screenshot and evaluates the application from a user's perspective: layout, readability, visual bugs, broken flows, UX friction. It does **not** comment on test coverage, security practices, or code quality — only on what a real user would see and experience.
+
 ### Verdict
 
-The AI returns a verdict — **ready**, **not-ready**, or **needs-attention** — with a confidence score and a summary explaining its reasoning.
+The AI returns a verdict — **ready**, **not-ready**, or **needs-attention** — with a confidence score and a summary of the user experience.
 
 ### Findings
 
@@ -259,12 +261,12 @@ Each finding is categorized by severity:
 
 | Severity | Meaning |
 |----------|---------|
-| **Critical** | Must be fixed before production. Broken core flows, data loss, security issues. |
-| **Warning** | Problems that might block some users or degrade experience significantly. |
-| **Nitpick** | Small details worth addressing — cosmetic issues, minor inconsistencies. |
-| **Improvement** | Suggestions for future versions — feature ideas, UX and accessibility enhancements. |
+| **Critical** | Broken UI that prevents users from completing the flow. Blank pages, forms that don't submit, dead navigation. |
+| **Warning** | UI problems that degrade the experience. Hard-to-read text, confusing layout, misleading labels. |
+| **Nitpick** | Small visual details — spacing, alignment, truncated text, minor styling imperfections. |
+| **Improvement** | UX suggestions — better button placement, clearer labels, visual hierarchy improvements. |
 
-The AI deduplicates findings: if the same root cause appears in multiple tests, it's reported once. It can also suggest improvements for passing flows based on screenshot analysis.
+The AI deduplicates findings: if the same issue appears across multiple flows, it's reported once.
 
 ### Output
 

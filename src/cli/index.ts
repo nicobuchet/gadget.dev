@@ -202,7 +202,7 @@ program
         return;
       }
 
-      // Parse all test files
+      // Parse all test files — force screenshot: "always" so the AI can review every screen
       const tests: TestCase[] = [];
       for (const file of allFiles) {
         try {
@@ -210,6 +210,7 @@ program
           if (options.baseUrl) test.config.baseUrl = options.baseUrl;
           if (options.timeout) test.config.timeout = options.timeout;
           if (options.stopOnFailure) test.config.stopOnFailure = true;
+          test.config.screenshot = "always";
           tests.push(test);
         } catch (err) {
           console.error(`Parse error in ${file}:`);
