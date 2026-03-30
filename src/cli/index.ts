@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { resolve } from "node:path";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { resolve, join } from "node:path";
+import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { resolveTestPaths } from "../parser/resolver.js";
 import { parseTestFile, parseSuiteFile, parseConfig } from "../parser/parser.js";
 import { runSuite } from "../runner/runner.js";
@@ -246,6 +246,10 @@ program
 
       // Notify reporters of audit completion
       reporter.onAuditEnd?.(report);
+
+      // Clean up screenshots — they were only needed for the AI review
+      const screenshotsDir = join(config.output.dir, "screenshots");
+      rmSync(screenshotsDir, { recursive: true, force: true });
 
       // Exit code: 0 = ready, 1 = not-ready or has criticals
       const hasCriticals = findings.some(f => f.severity === "critical");
