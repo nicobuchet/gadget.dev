@@ -3,12 +3,14 @@ import type {
   StepResult,
   TestResult,
   SuiteResult,
+  AuditReport,
   ReporterInterface,
 } from "../types/index.js";
 import { ConsoleReporter } from "./console.js";
 import { HtmlReporter } from "./html.js";
 import { JunitReporter } from "./junit.js";
 import { GithubReporter } from "./github.js";
+import { JsonReporter } from "./json.js";
 
 export class MultiReporter implements ReporterInterface {
   constructor(private reporters: ReporterInterface[]) {}
@@ -27,6 +29,10 @@ export class MultiReporter implements ReporterInterface {
 
   onSuiteEnd(result: SuiteResult): void {
     for (const r of this.reporters) r.onSuiteEnd(result);
+  }
+
+  onAuditEnd(report: AuditReport): void {
+    for (const r of this.reporters) r.onAuditEnd?.(report);
   }
 }
 
@@ -49,6 +55,9 @@ export function createReporters(
         break;
       case "github":
         reporters.push(new GithubReporter());
+        break;
+      case "json":
+        reporters.push(new JsonReporter(outputDir));
         break;
       default:
         console.warn(`Unknown reporter: ${name}, skipping`);

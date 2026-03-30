@@ -5,6 +5,8 @@ import type {
   StepResult,
   TestResult,
   SuiteResult,
+  AuditReport,
+  AuditFinding,
   ReporterInterface,
 } from "../types/index.js";
 import { describeStep } from "../runner/runner.js";
@@ -148,6 +150,54 @@ export class HtmlReporter implements ReporterInterface {
   </div>
   ${extra}
 </div>`;
+  }
+
+  onAuditEnd(report: AuditReport): void {
+    const verdictColors = {
+      "ready": "#22c55e",
+      "not-ready": "#ef4444",
+      "needs-attention": "#f59e0b",
+    };
+    const severityColors = {
+      critical: "#ef4444",
+      warning: "#f59e0b",
+      nitpick: "#06b6d4",
+      improvement: "#3b82f6",
+    };
+
+    const findingsHtml = (["critical", "warning", "nitpick", "improvement"] as const)
+      .map(severity => {
+        const items = report.findings.filter(f => f.severity === severity);
+        if (items.length === 0) return "";
+        return `<div class="finding-group">
+          <h3 style="color: ${severityColors[severity]}; text-transform: uppercase; margin: 16px 0 8px;">${severity} (${items.length})</h3>
+          ${items.map(f => `<div class="finding" style="border-left: 3px solid ${severityColors[f.severity]}; padding: 8px 12px; margin-bottom: 8px; background: white; border-radius: 4px;">
+            <strong>${this.escapeHtml(f.title)}</strong>
+            <p style="color: #666; font-size: 14px; margin-top: 4px;">${this.escapeHtml(f.description)}</p>
+            ${f.relatedTest ? `<span style="color: #999; font-size: 12px;">Test: ${this.escapeHtml(f.relatedTest)}</span>` : ""}
+          </div>`).join("\n")}
+        </div>`;
+      })
+      .join("\n");
+
+    const auditHtml = `<div class="audit-section" style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <h2 style="margin-bottom: 12px;">Audit Verdict</h2>
+      <div style="display: inline-block; padding: 8px 16px; border-radius: 6px; color: white; font-weight: bold; font-size: 18px; background: ${verdictColors[report.verdict.readiness]};">
+        ${report.verdict.readiness.toUpperCase()}
+      </div>
+      <span style="color: #666; margin-left: 12px;">Confidence: ${(report.verdict.confidence * 100).toFixed(0)}%</span>
+      <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">${this.escapeHtml(report.verdict.summary)}</p>
+      ${findingsHtml}
+    </div>`;
+
+    // Re-generate the full report with audit section inserted after the header
+    const fullHtml = this.generateHtml(report.suiteResult).replace(
+      "</div>\n  <div class=\"test",
+      `</div>\n  ${auditHtml}\n  <div class="test`,
+    );
+
+    mkdirSync(this.outputDir, { recursive: true });
+    writeFileSync(join(this.outputDir, "report.html"), fullHtml);
   }
 
   private escapeHtml(text: string): string {

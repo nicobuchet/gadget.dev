@@ -1,0 +1,24 @@
+# Add this to your .gitlab-ci.yml
+#
+# Schedule this pipeline via GitLab > CI/CD > Schedules
+# (e.g. daily at 06:00 UTC with cron: "0 6 * * *")
+#
+# Required CI/CD variables:
+#   ANTHROPIC_API_KEY - your Claude API key
+#   STAGING_URL       - the base URL to test against
+
+gadget-audit:
+  image: mcr.microsoft.com/playwright:v1.50.0-noble
+  stage: test
+  script:
+    - npm ci
+    - npx gadget audit tests/ --base-url $STAGING_URL --reporter console,json
+  artifacts:
+    when: always
+    paths:
+      - .gadget/results/audit-report.json
+      - .gadget/results/suite-result.json
+    expire_in: 30 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web" # manual trigger

@@ -132,6 +132,13 @@ export interface AIProvider {
     userPrompt: string;
     maxTokens: number;
   }): Promise<string>;
+
+  auditSuite?(input: {
+    suiteResult: SuiteResult;
+    screenshots: Array<{ testName: string; stepIndex: number; data: Buffer }>;
+    testDescriptions: Array<{ name: string; steps: string[] }>;
+    maxTokens: number;
+  }): Promise<{ verdict: AuditVerdict; findings: AuditFinding[] }>;
 }
 
 export interface FailureAnalysis {
@@ -150,6 +157,35 @@ export interface VerifyResult {
 export interface PlaywrightAction {
   command: "click" | "fill" | "select" | "scroll" | "wait";
   params: Record<string, string>;
+}
+
+// ── Audit Feedback ──
+
+export type FeedbackSeverity = "critical" | "warning" | "nitpick" | "improvement";
+
+export interface AuditFinding {
+  severity: FeedbackSeverity;
+  title: string;
+  description: string;
+  relatedTest?: string;
+  relatedStep?: number;
+  screenshotPath?: string;
+}
+
+export type ProductionReadiness = "ready" | "not-ready" | "needs-attention";
+
+export interface AuditVerdict {
+  readiness: ProductionReadiness;
+  confidence: number;
+  summary: string;
+}
+
+export interface AuditReport {
+  verdict: AuditVerdict;
+  findings: AuditFinding[];
+  suiteResult: SuiteResult;
+  timestamp: string;
+  duration: number;
 }
 
 // ── Configuration ──
@@ -175,6 +211,9 @@ export interface GadgetConfig {
     outputDir?: string;
     maxTokens?: number;
     run?: boolean;
+  };
+  audit?: {
+    maxTokens?: number;
   };
 }
 
@@ -202,4 +241,5 @@ export interface ReporterInterface {
   onStepResult(step: StepDefinition, result: StepResult): void;
   onTestEnd(result: TestResult): void;
   onSuiteEnd(result: SuiteResult): void;
+  onAuditEnd?(report: AuditReport): void;
 }
