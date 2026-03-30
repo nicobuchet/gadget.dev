@@ -233,8 +233,15 @@ program
       // Run the suite
       const suiteResult = await runSuite(tests, "Gadget Audit", config, reporter, analyzer);
 
-      // Perform holistic AI audit
+      // Perform holistic AI audit with spinner
+      const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+      let frame = 0;
+      const spinner = setInterval(() => {
+        process.stdout.write(`\r${spinnerFrames[frame++ % spinnerFrames.length]} AI is reviewing the application...`);
+      }, 80);
       const { verdict, findings } = await analyzer.auditSuite(suiteResult, tests, config);
+      clearInterval(spinner);
+      process.stdout.write("\r\x1b[K");
 
       const report: AuditReport = {
         verdict,
