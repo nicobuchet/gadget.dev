@@ -134,6 +134,25 @@ export class ClaudeProvider implements AIProvider {
     return this.parseJson<PlaywrightAction[]>(response);
   }
 
+  async generateTests(input: {
+    systemPrompt: string;
+    userPrompt: string;
+    maxTokens: number;
+  }): Promise<string> {
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: input.maxTokens,
+      system: input.systemPrompt,
+      messages: [{ role: "user", content: input.userPrompt }],
+    });
+
+    const textBlock = response.content.find((b) => b.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("No text response from Claude");
+    }
+    return textBlock.text;
+  }
+
   private parseJson<T>(response: Anthropic.Message): T {
     const textBlock = response.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {

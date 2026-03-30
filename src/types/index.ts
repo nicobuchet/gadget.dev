@@ -126,6 +126,12 @@ export interface AIProvider {
     instruction: string;
     htmlSummary: string;
   }): Promise<PlaywrightAction[]>;
+
+  generateTests?(input: {
+    systemPrompt: string;
+    userPrompt: string;
+    maxTokens: number;
+  }): Promise<string>;
 }
 
 export interface FailureAnalysis {
@@ -163,6 +169,12 @@ export interface GadgetConfig {
   output: {
     dir: string;
     reporters: string[];
+  };
+  check?: {
+    baseBranch?: string;
+    outputDir?: string;
+    maxTokens?: number;
+    run?: boolean;
   };
 }
 
