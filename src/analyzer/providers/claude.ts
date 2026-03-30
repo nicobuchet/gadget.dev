@@ -166,8 +166,8 @@ export class ClaudeProvider implements AIProvider {
   }): Promise<{ verdict: AuditVerdict; findings: AuditFinding[] }> {
     const contentBlocks: Anthropic.MessageCreateParams["messages"][0]["content"] = [];
 
-    // Add up to 10 screenshots as image blocks
-    const screenshotSlice = input.screenshots.slice(0, 10);
+    // Add up to 20 screenshots — the AI needs to see the full UI flow
+    const screenshotSlice = input.screenshots.slice(0, 20);
     for (const screenshot of screenshotSlice) {
       contentBlocks.push({
         type: "image",
