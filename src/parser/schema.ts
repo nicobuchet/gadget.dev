@@ -138,4 +138,12 @@ export const GadgetConfigSchema = z.object({
       reporters: z.array(z.string()).default(["console"]),
     })
     .default({}),
+  check: z
+    .object({
+      baseBranch: z.string().default("main"),
+      outputDir: z.string().default(".gadget/generated"),
+      maxTokens: z.number().default(8192),
+      run: z.boolean().default(true),
+    })
+    .optional(),
 });

@@ -9,6 +9,7 @@ import { runSuite } from "../runner/runner.js";
 import { createReporters } from "../reporter/reporter.js";
 import { createProvider } from "../analyzer/providers/provider.js";
 import { Analyzer } from "../analyzer/analyzer.js";
+import { check } from "../checker/generator.js";
 import type { TestCase, GadgetConfig } from "../types/index.js";
 import { DEFAULT_CONFIG } from "../types/index.js";
 
@@ -93,6 +94,63 @@ program
       const result = await runSuite(tests, "Gadget Run", config, reporter, analyzer);
 
       process.exitCode = result.failed > 0 ? 1 : 0;
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : err);
+      process.exitCode = 2;
+    }
+  });
+
+// ── check command ──
+
+program
+  .command("check")
+  .description("Auto-generate and run E2E tests from git diff")
+  .option("--base-url <url>", "base URL to test against")
+  .option("--base-branch <branch>", "git branch to diff against")
+  .option("--mr <url>", "merge request / pull request URL for context")
+  .option("--output-dir <dir>", "directory for generated test files")
+  .option("--no-run", "only generate tests, do not execute them")
+  .option("--headed", "run browser in headed mode")
+  .option("--timeout <ms>", "override default timeout", parseInt)
+  .option("--reporter <names>", "comma-separated reporter names", "console")
+  .option("--stop-on-failure", "stop on first failure")
+  .action(async (options) => {
+    try {
+      const fileConfig = parseConfig(process.cwd());
+      const config = mergeConfig(fileConfig, options);
+      const checkConfig = config.check ?? {};
+
+      // Resolve baseUrl: CLI flag > config check > config browser (not applicable) > error
+      const baseUrl =
+        options.baseUrl ?? checkConfig.baseBranch ?? undefined;
+
+      // Try to find baseUrl from the config or CLI
+      const resolvedBaseUrl = options.baseUrl;
+      if (!resolvedBaseUrl) {
+        console.error(
+          "Error: --base-url is required for gadget check.\n" +
+            "  Example: gadget check --base-url http://localhost:3000",
+        );
+        process.exitCode = 2;
+        return;
+      }
+
+      const result = await check({
+        baseUrl: resolvedBaseUrl,
+        baseBranch: options.baseBranch ?? checkConfig.baseBranch ?? "main",
+        mrUrl: options.mr,
+        outputDir: options.outputDir ?? checkConfig.outputDir ?? ".gadget/generated",
+        run: options.run !== false,
+        config,
+        headed: options.headed,
+        timeout: options.timeout,
+        reporter: options.reporter,
+        stopOnFailure: options.stopOnFailure,
+      });
+
+      if (result.suiteResult) {
+        process.exitCode = result.suiteResult.failed > 0 ? 1 : 0;
+      }
     } catch (err) {
       console.error(err instanceof Error ? err.message : err);
       process.exitCode = 2;
