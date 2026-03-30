@@ -10,7 +10,7 @@ import { createReporters } from "../reporter/reporter.js";
 import { createProvider } from "../analyzer/providers/provider.js";
 import { Analyzer } from "../analyzer/analyzer.js";
 import { check } from "../checker/generator.js";
-import type { TestCase, GadgetConfig } from "../types/index.js";
+import type { TestCase, GadgetConfig, AuditReport } from "../types/index.js";
 import { DEFAULT_CONFIG } from "../types/index.js";
 
 const program = new Command();
@@ -150,6 +150,108 @@ program
 
       if (result.suiteResult) {
         process.exitCode = result.suiteResult.failed > 0 ? 1 : 0;
+      }
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : err);
+      process.exitCode = 2;
+    }
+  });
+
+// ── audit command ──
+
+program
+  .command("audit")
+  .description("Run E2E tests and produce an AI-powered production readiness assessment")
+  .argument("<paths...>", "test files, directories, or suite files")
+  .option("--headed", "run browser in headed mode")
+  .option("--base-url <url>", "override base URL")
+  .option("--timeout <ms>", "override default timeout", parseInt)
+  .option("--reporter <names>", "comma-separated reporter names", "console")
+  .option("--output <dir>", "output directory")
+  .option("--provider <name>", "AI provider name")
+  .option("--stop-on-failure", "stop on first failure")
+  .action(async (paths: string[], options) => {
+    try {
+      const auditStart = Date.now();
+
+      // Load config
+      const fileConfig = parseConfig(process.cwd());
+      const config = mergeConfig(fileConfig, options);
+
+      // AI provider is required for audit
+      const provider = createProvider(config);
+      if (!provider) {
+        console.error(
+          "Error: An AI provider is required for gadget audit.\n" +
+            "  Set ANTHROPIC_API_KEY or configure a provider in .gadgetrc.yaml",
+        );
+        process.exitCode = 2;
+        return;
+      }
+      const analyzer = new Analyzer(provider);
+
+      // Resolve all test files
+      const allFiles: string[] = [];
+      for (const p of paths) {
+        allFiles.push(...resolveTestPaths(p));
+      }
+
+      if (allFiles.length === 0) {
+        console.error("No test files found");
+        process.exitCode = 2;
+        return;
+      }
+
+      // Parse all test files
+      const tests: TestCase[] = [];
+      for (const file of allFiles) {
+        try {
+          const test = parseTestFile(file);
+          if (options.baseUrl) test.config.baseUrl = options.baseUrl;
+          if (options.timeout) test.config.timeout = options.timeout;
+          if (options.stopOnFailure) test.config.stopOnFailure = true;
+          tests.push(test);
+        } catch (err) {
+          console.error(`Parse error in ${file}:`);
+          console.error(err instanceof Error ? err.message : err);
+          process.exitCode = 2;
+          return;
+        }
+      }
+
+      // Create reporters — always include json for CI artifact consumption
+      const reporterNames = (options.reporter as string).split(",");
+      if (!reporterNames.includes("json")) {
+        reporterNames.push("json");
+      }
+      const reporter = createReporters(reporterNames, config.output.dir);
+
+      // Ensure output directory exists
+      mkdirSync(config.output.dir, { recursive: true });
+
+      // Run the suite
+      const suiteResult = await runSuite(tests, "Gadget Audit", config, reporter, analyzer);
+
+      // Perform holistic AI audit
+      const { verdict, findings } = await analyzer.auditSuite(suiteResult, tests, config);
+
+      const report: AuditReport = {
+        verdict,
+        findings,
+        suiteResult,
+        timestamp: new Date().toISOString(),
+        duration: Date.now() - auditStart,
+      };
+
+      // Notify reporters of audit completion
+      reporter.onAuditEnd?.(report);
+
+      // Exit code: 0 = ready, 1 = not-ready or has criticals
+      const hasCriticals = findings.some(f => f.severity === "critical");
+      if (verdict.readiness === "not-ready" || hasCriticals) {
+        process.exitCode = 1;
+      } else {
+        process.exitCode = 0;
       }
     } catch (err) {
       console.error(err instanceof Error ? err.message : err);

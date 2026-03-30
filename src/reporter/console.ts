@@ -4,6 +4,7 @@ import type {
   StepResult,
   TestResult,
   SuiteResult,
+  AuditReport,
   ReporterInterface,
 } from "../types/index.js";
 import { describeStep } from "../runner/runner.js";
@@ -66,5 +67,46 @@ export class ConsoleReporter implements ReporterInterface {
     );
     console.log(chalk.gray(`  Total time: ${result.duration}ms`));
     console.log(chalk.bold("─────────────────────────────────\n"));
+  }
+
+  onAuditEnd(report: AuditReport): void {
+    const verdictColors = {
+      "ready": chalk.green,
+      "not-ready": chalk.red,
+      "needs-attention": chalk.yellow,
+    };
+    const color = verdictColors[report.verdict.readiness];
+
+    console.log(chalk.bold("\n═════════════════════════════════"));
+    console.log(chalk.bold("  AUDIT VERDICT"));
+    console.log(chalk.bold("═════════════════════════════════"));
+    console.log(color.bold(`  ${report.verdict.readiness.toUpperCase()}`));
+    console.log(chalk.gray(`  Confidence: ${(report.verdict.confidence * 100).toFixed(0)}%`));
+    console.log(`\n  ${report.verdict.summary}`);
+
+    const severityConfig = {
+      critical: { color: chalk.red, icon: "!!" },
+      warning: { color: chalk.yellow, icon: "!" },
+      nitpick: { color: chalk.cyan, icon: "~" },
+      improvement: { color: chalk.blue, icon: "+" },
+    } as const;
+
+    for (const severity of ["critical", "warning", "nitpick", "improvement"] as const) {
+      const findings = report.findings.filter(f => f.severity === severity);
+      if (findings.length === 0) continue;
+
+      const { color: sColor, icon } = severityConfig[severity];
+      console.log(sColor.bold(`\n  [${icon}] ${severity.toUpperCase()} (${findings.length})`));
+
+      for (const finding of findings) {
+        console.log(sColor(`    ${finding.title}`));
+        console.log(chalk.gray(`      ${finding.description}`));
+        if (finding.relatedTest) {
+          console.log(chalk.gray(`      Test: ${finding.relatedTest}`));
+        }
+      }
+    }
+
+    console.log(chalk.bold("\n═════════════════════════════════\n"));
   }
 }
