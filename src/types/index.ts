@@ -9,6 +9,7 @@ export interface FillStep {
   type: "fill";
   label: string;
   value: string;
+  secure?: boolean;
 }
 
 export interface ClickStep {

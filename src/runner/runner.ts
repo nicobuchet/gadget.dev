@@ -50,7 +50,7 @@ function describeStep(step: StepDefinition): string {
     case "navigate":
       return `Navigate to ${step.url}`;
     case "fill":
-      return `Fill "${step.label}" with "${step.value}"`;
+      return `Fill "${step.label}" with "${step.secure ? "••••••" : step.value}"`;
     case "click":
       return `Click "${step.target}"`;
     case "assert":
@@ -67,6 +67,13 @@ function describeStep(step: StepDefinition): string {
     case "verify":
       return `Verify: ${step.assertion}`;
   }
+}
+
+function sanitizeStep(step: StepDefinition): StepDefinition {
+  if (step.type === "fill" && step.secure) {
+    return { ...step, value: "••••••" };
+  }
+  return step;
 }
 
 export async function runTest(
@@ -179,8 +186,9 @@ export async function runTest(
       }
     }
 
+    result!.step = sanitizeStep(result!.step);
     results.push(result!);
-    reporter?.onStepResult(step, result!);
+    reporter?.onStepResult(result!.step, result!);
 
     if (result!.status === "fail" && testCase.config.stopOnFailure) {
       break;
