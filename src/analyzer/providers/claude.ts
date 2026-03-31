@@ -1,21 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type {
   AIProvider,
-  FailureAnalysis,
-  VerifyResult,
-  PlaywrightAction,
-  StepDefinition,
   SuiteResult,
   AuditVerdict,
   AuditFinding,
 } from "../../types/index.js";
 import {
-  failureAnalysisSystemPrompt,
-  failureAnalysisUserPrompt,
-  visualVerifySystemPrompt,
-  visualVerifyUserPrompt,
-  interpretActionSystemPrompt,
-  interpretActionUserPrompt,
   auditSystemPrompt,
   auditUserPrompt,
 } from "../prompts.js";
@@ -30,113 +20,6 @@ export class ClaudeProvider implements AIProvider {
     this.client = new Anthropic({ apiKey });
     this.model = model ?? "claude-sonnet-4-6-20250514";
     this.maxTokens = maxTokens ?? 1024;
-  }
-
-  async analyzeFailure(input: {
-    screenshot: Buffer;
-    step: StepDefinition;
-    error: string;
-    htmlSummary: string;
-  }): Promise<FailureAnalysis> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: failureAnalysisSystemPrompt(),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/png",
-                data: input.screenshot.toString("base64"),
-              },
-            },
-            {
-              type: "text",
-              text: failureAnalysisUserPrompt(
-                input.step,
-                input.error,
-                input.htmlSummary,
-              ),
-            },
-          ],
-        },
-      ],
-    });
-
-    return this.parseJson<FailureAnalysis>(response);
-  }
-
-  async verifyVisual(input: {
-    screenshot: Buffer;
-    assertion: string;
-    htmlSummary: string;
-  }): Promise<VerifyResult> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: visualVerifySystemPrompt(),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/png",
-                data: input.screenshot.toString("base64"),
-              },
-            },
-            {
-              type: "text",
-              text: visualVerifyUserPrompt(input.assertion, input.htmlSummary),
-            },
-          ],
-        },
-      ],
-    });
-
-    return this.parseJson<VerifyResult>(response);
-  }
-
-  async interpretAction(input: {
-    screenshot: Buffer;
-    instruction: string;
-    htmlSummary: string;
-  }): Promise<PlaywrightAction[]> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: interpretActionSystemPrompt(),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/png",
-                data: input.screenshot.toString("base64"),
-              },
-            },
-            {
-              type: "text",
-              text: interpretActionUserPrompt(
-                input.instruction,
-                input.htmlSummary,
-              ),
-            },
-          ],
-        },
-      ],
-    });
-
-    return this.parseJson<PlaywrightAction[]>(response);
   }
 
   async generateTests(input: {

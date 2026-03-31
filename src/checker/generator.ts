@@ -12,7 +12,6 @@ import { parseTestFile } from "../parser/parser.js";
 import { TestFileSchema } from "../parser/schema.js";
 import { runSuite } from "../runner/runner.js";
 import { createReporters } from "../reporter/reporter.js";
-import { Analyzer } from "../analyzer/analyzer.js";
 import type { GadgetConfig, SuiteResult, TestCase } from "../types/index.js";
 
 export interface CheckResult {
@@ -160,19 +159,12 @@ export async function check(options: CheckOptions): Promise<CheckResult> {
   const reporterNames = (options.reporter ?? "console").split(",");
   const reporter = createReporters(reporterNames, options.config.output.dir);
 
-  // Create analyzer for failure analysis (optional)
-  let analyzer: Analyzer | undefined;
-  if (provider) {
-    analyzer = new Analyzer(provider);
-  }
-
   mkdirSync(options.config.output.dir, { recursive: true });
   const suiteResult = await runSuite(
     tests,
     "Gadget Check",
     options.config,
     reporter,
-    analyzer,
   );
 
   return { generatedFiles, suiteResult };

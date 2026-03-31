@@ -30,14 +30,6 @@ export class ConsoleReporter implements ReporterInterface {
       if (result.screenshotPath) {
         console.log(`    ${chalk.gray(`Screenshot: ${result.screenshotPath}`)}`);
       }
-      if (result.analysis) {
-        console.log(`    ${chalk.cyan("AI Analysis:")}`);
-        console.log(`      ${chalk.cyan(result.analysis.summary)}`);
-        console.log(`      ${chalk.gray(`Category: ${result.analysis.category}`)}`);
-        if (result.analysis.suggestedFix) {
-          console.log(`      ${chalk.yellow(`Fix: ${result.analysis.suggestedFix}`)}`);
-        }
-      }
     }
   }
 
