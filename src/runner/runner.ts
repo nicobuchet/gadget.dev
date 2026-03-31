@@ -120,6 +120,13 @@ export async function runTest(
 
       // Take screenshot if configured to always
       if (testCase.config.screenshot === "always") {
+        // Wait for page to settle before capturing — avoids screenshots of loading/skeleton states
+        await page.waitForLoadState("networkidle").catch(() => {});
+        const settleMs = testCase.config.settle ?? 0;
+        if (settleMs > 0) {
+          await page.waitForTimeout(settleMs);
+        }
+
         const screenshotPath = join(
           config.output.dir,
           "screenshots",

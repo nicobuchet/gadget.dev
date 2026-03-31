@@ -90,6 +90,7 @@ export const TestConfigSchema = z.object({
     .enum(["always", "on-failure", "never"])
     .default("on-failure"),
   stopOnFailure: z.boolean().default(false),
+  settle: z.number().optional(),
 });
 
 // ── Test File Schema ──

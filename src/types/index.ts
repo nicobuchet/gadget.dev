@@ -58,6 +58,7 @@ export interface TestConfig {
   timeout?: number;
   screenshot?: "always" | "on-failure" | "never";
   stopOnFailure?: boolean;
+  settle?: number;
 }
 
 export interface TestCase {
