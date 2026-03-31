@@ -170,6 +170,7 @@ program
   .option("--output <dir>", "output directory")
   .option("--provider <name>", "AI provider name")
   .option("--stop-on-failure", "stop on first failure")
+  .option("--settle <ms>", "wait time (ms) after each step for page to settle before screenshot", parseInt)
   .action(async (paths: string[], options) => {
     try {
       const auditStart = Date.now();
@@ -211,6 +212,7 @@ program
           if (options.timeout) test.config.timeout = options.timeout;
           if (options.stopOnFailure) test.config.stopOnFailure = true;
           test.config.screenshot = "always";
+          test.config.settle = options.settle ?? test.config.settle ?? 1500;
           tests.push(test);
         } catch (err) {
           console.error(`Parse error in ${file}:`);
