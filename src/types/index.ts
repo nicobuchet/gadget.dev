@@ -32,24 +32,12 @@ export interface WaitStep {
   timeout?: number;
 }
 
-export interface DoStep {
-  type: "do";
-  instruction: string;
-}
-
-export interface VerifyStep {
-  type: "verify";
-  assertion: string;
-}
-
 export type StepDefinition =
   | NavigateStep
   | FillStep
   | ClickStep
   | AssertStep
-  | WaitStep
-  | DoStep
-  | VerifyStep;
+  | WaitStep;
 
 // ── Test Structure ──
 
@@ -85,7 +73,6 @@ export interface StepResult {
   duration: number;
   error?: string;
   screenshotPath?: string;
-  analysis?: FailureAnalysis;
 }
 
 export interface TestResult {
@@ -110,24 +97,6 @@ export interface SuiteResult {
 export interface AIProvider {
   name: string;
 
-  analyzeFailure(input: {
-    screenshot: Buffer;
-    step: StepDefinition;
-    error: string;
-    htmlSummary: string;
-  }): Promise<FailureAnalysis>;
-
-  verifyVisual(input: {
-    screenshot: Buffer;
-    assertion: string;
-    htmlSummary: string;
-  }): Promise<VerifyResult>;
-
-  interpretAction(input: {
-    screenshot: Buffer;
-    instruction: string;
-    htmlSummary: string;
-  }): Promise<PlaywrightAction[]>;
 
   generateTests?(input: {
     systemPrompt: string;
@@ -143,23 +112,6 @@ export interface AIProvider {
   }): Promise<{ verdict: AuditVerdict; findings: AuditFinding[] }>;
 }
 
-export interface FailureAnalysis {
-  summary: string;
-  category: "test-bug" | "app-bug" | "environment" | "flaky";
-  details: string;
-  suggestedFix?: string;
-}
-
-export interface VerifyResult {
-  pass: boolean;
-  reason: string;
-  confidence: number;
-}
-
-export interface PlaywrightAction {
-  command: "click" | "fill" | "select" | "scroll" | "wait";
-  params: Record<string, string>;
-}
 
 // ── Audit Feedback ──
 

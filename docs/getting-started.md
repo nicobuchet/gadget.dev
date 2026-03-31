@@ -1,6 +1,6 @@
 # Getting Started with Gadget
 
-Gadget is an AI-powered E2E testing CLI tool that acts as an agentic beta tester. Write tests in YAML, run them against any web application with Playwright, and get intelligent failure analysis and production readiness assessments powered by Claude.
+Gadget is an AI-powered E2E testing CLI tool that acts as an agentic beta tester. Write tests in YAML, run them against any web application with Playwright, and get production readiness assessments powered by Claude.
 
 ## Installation
 
@@ -94,8 +94,6 @@ steps:
 | `click` | Click a button, link, or element by text | `- click: "Submit"` |
 | `assert` | Assert text visibility, URL, or page title | `- assert: { title: "Dashboard" }` |
 | `wait` | Wait for a URL or CSS selector | `- wait: { selector: ".loaded" }` |
-| `do` | Natural language action (requires AI) | `- do: "Close the cookie banner"` |
-| `verify` | Visual assertion (requires AI) | `- verify: "The page shows a success message"` |
 
 ### Assert variants
 
@@ -158,37 +156,11 @@ steps:
       value: "{{ env.TEST_API_KEY }}"
 ```
 
-## AI-Powered Steps
+## AI-Powered Audit
 
-Gadget can use Claude to interpret natural language actions and visual assertions. This requires an `ANTHROPIC_API_KEY` environment variable.
+Gadget uses Claude to review your application's UI after test execution. AI is only used in the `audit` command — it analyzes screenshots captured during test runs to provide production readiness assessments. This requires an `ANTHROPIC_API_KEY` environment variable.
 
-### `do` — Natural language actions
-
-The AI looks at the current page screenshot and HTML summary, then determines which Playwright actions to perform:
-
-```yaml
-- do: "Close the cookie consent banner"
-- do: "Select the second item in the dropdown"
-```
-
-### `verify` — Visual assertions
-
-The AI analyzes the page screenshot to determine if an assertion is true:
-
-```yaml
-- verify: "The shopping cart shows 3 items"
-- verify: "There is an error message displayed in red"
-```
-
-### AI failure analysis
-
-When a structured step (navigate, click, fill, assert, wait) fails and an AI provider is configured, Gadget automatically analyzes the failure and provides:
-
-- A summary of what went wrong
-- A category (`test-bug`, `app-bug`, `environment`, `flaky`)
-- Suggested fixes
-
-Without an API key, `do`/`verify` steps are skipped and failure analysis is omitted. The tool works fully without AI.
+The `run` command works fully without AI — no API key needed.
 
 ## Configuration
 

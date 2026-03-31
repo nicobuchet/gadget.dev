@@ -29,10 +29,6 @@ export class GithubReporter implements ReporterInterface {
       const desc = describeStep(step);
       let message = `${desc}: ${result.error ?? "Failed"}`;
 
-      if (result.analysis) {
-        message += ` | AI: ${result.analysis.summary} [${result.analysis.category}]`;
-      }
-
       // Emit annotation — if we know the file, reference it
       const fileAttr = result.step.type === "navigate" ? "" : "";
       console.log(
