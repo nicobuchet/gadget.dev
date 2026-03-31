@@ -87,14 +87,19 @@ Determine the Playwright actions needed and respond with the JSON array.`;
 export function auditSystemPrompt(): string {
   return `You are a beta tester manually testing a web application. You are looking at real screenshots of the application as a user navigates through it.
 
-Your job is to review the UI and UX as if you were a real user, and provide feedback on what you see in the screenshots. Focus on:
-1. Does the UI look correct? Are there visual bugs, broken layouts, overlapping elements, missing content?
+Your job is to review the UI and UX of the SPECIFIC FLOW being tested, as if you were a real user going through that flow. Focus on:
+1. Does the UI look correct on the pages that are PART OF the flow?
 2. Does the flow feel intuitive? Is the user experience smooth or confusing?
-3. Are there loading states, error messages, or empty states that look wrong?
+3. Are there loading states, error messages, or empty states that look wrong ON THE PAGES BEING TESTED?
 4. Is the content readable? Are labels, buttons, and text clear and well-placed?
 5. Are there any visual regressions, alignment issues, or styling problems?
 
-IMPORTANT: You are reviewing the APPLICATION, not the tests. Do NOT comment on test coverage, test quality, test methodology, security practices, or password strength. Only report what you can actually see in the screenshots as a user would experience it.
+CRITICAL SCOPING RULES:
+- ONLY provide feedback on the pages and UI elements that are directly part of the flow being tested.
+- The LAST screenshot of a flow is often just a confirmation that the flow succeeded (e.g. a redirect to a dashboard after login). Do NOT review or critique that destination page — it is out of scope. If the flow ends with a successful redirect, that means the flow works.
+- For example: a "Login Flow" test should get feedback on the login PAGE (form layout, labels, inputs, button) and whether login succeeds. The dashboard that appears after login is NOT part of the login flow — do not comment on it.
+- Do NOT comment on test coverage, test quality, test methodology, security practices, or password strength.
+- Only report what you can actually see in the screenshots as a user would experience it, scoped to the flow being tested.
 
 If a flow fails (a step did not succeed), report what went wrong from the USER's perspective — e.g. "the page shows an error after clicking Submit" or "the form does not respond to the click".
 
@@ -146,11 +151,18 @@ export function auditUserPrompt(
 ${failedSteps ? `Failed steps:\n${failedSteps}` : "All steps passed."}`;
   }).join("\n\n");
 
-  const flowDescriptions = testDescriptions.map(t =>
-    `### ${t.name}\nUser journey:\n${t.steps.map((s, i) => `  ${i}. ${s}`).join("\n")}`
-  ).join("\n\n");
+  const flowDescriptions = testDescriptions.map(t => {
+    const lastIndex = t.steps.length - 1;
+    const steps = t.steps.map((s, i) => {
+      const label = i === lastIndex ? `  ${i}. ${s}  ← FINAL STEP (confirmation only — do NOT review this page)` : `  ${i}. ${s}`;
+      return label;
+    }).join("\n");
+    return `### ${t.name}\nUser journey:\n${steps}`;
+  }).join("\n\n");
 
   return `The screenshots above show what the user sees at each step of the following flows. Review them as a beta tester would.
+
+IMPORTANT: Only review the pages that are part of the flow itself. The last screenshot is typically a redirect/confirmation that the flow succeeded — do NOT review or critique that destination page.
 
 ## Flows Tested
 ${flowDescriptions}
@@ -158,5 +170,5 @@ ${flowDescriptions}
 ## Outcomes
 ${flowSummaries}
 
-Look at each screenshot carefully and provide your feedback on the UI and user experience as JSON.`;
+Provide your feedback ONLY on the flow pages (not the destination after completion) as JSON.`;
 }
