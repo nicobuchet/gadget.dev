@@ -12,6 +12,7 @@ const FillStepSchema = z
     fill: z.object({
       label: z.string(),
       value: z.string(),
+      secure: z.boolean().optional(),
     }),
   })
   .transform(
@@ -19,6 +20,7 @@ const FillStepSchema = z
       type: "fill",
       label: v.fill.label,
       value: v.fill.value,
+      secure: v.fill.secure,
     }),
   );
 
@@ -88,6 +90,7 @@ export const TestConfigSchema = z.object({
     .enum(["always", "on-failure", "never"])
     .default("on-failure"),
   stopOnFailure: z.boolean().default(false),
+  settle: z.number().optional(),
 });
 
 // ── Test File Schema ──

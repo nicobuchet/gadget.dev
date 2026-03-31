@@ -5,6 +5,9 @@ import type {
   VerifyResult,
   PlaywrightAction,
   StepDefinition,
+  SuiteResult,
+  AuditVerdict,
+  AuditFinding,
 } from "../../types/index.js";
 import {
   failureAnalysisSystemPrompt,
@@ -13,6 +16,8 @@ import {
   visualVerifyUserPrompt,
   interpretActionSystemPrompt,
   interpretActionUserPrompt,
+  auditSystemPrompt,
+  auditUserPrompt,
 } from "../prompts.js";
 
 export class ClaudeProvider implements AIProvider {
@@ -151,6 +156,47 @@ export class ClaudeProvider implements AIProvider {
       throw new Error("No text response from Claude");
     }
     return textBlock.text;
+  }
+
+  async auditSuite(input: {
+    suiteResult: SuiteResult;
+    screenshots: Array<{ testName: string; stepIndex: number; data: Buffer }>;
+    testDescriptions: Array<{ name: string; steps: string[] }>;
+    maxTokens: number;
+  }): Promise<{ verdict: AuditVerdict; findings: AuditFinding[] }> {
+    const contentBlocks: Anthropic.MessageCreateParams["messages"][0]["content"] = [];
+
+    // Add up to 20 screenshots — the AI needs to see the full UI flow
+    const screenshotSlice = input.screenshots.slice(0, 20);
+    for (const screenshot of screenshotSlice) {
+      contentBlocks.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/png",
+          data: screenshot.data.toString("base64"),
+        },
+      });
+      contentBlocks.push({
+        type: "text",
+        text: `[Screenshot: ${screenshot.testName} — step ${screenshot.stepIndex}]`,
+      });
+    }
+
+    // Add the text prompt
+    contentBlocks.push({
+      type: "text",
+      text: auditUserPrompt(input.suiteResult, input.testDescriptions),
+    });
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: input.maxTokens,
+      system: auditSystemPrompt(),
+      messages: [{ role: "user", content: contentBlocks }],
+    });
+
+    return this.parseJson<{ verdict: AuditVerdict; findings: AuditFinding[] }>(response);
   }
 
   private parseJson<T>(response: Anthropic.Message): T {
