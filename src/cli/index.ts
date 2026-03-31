@@ -245,6 +245,17 @@ program
       clearInterval(spinner);
       process.stdout.write("\r\x1b[K");
 
+      // Enrich findings with screenshot paths from the matching step results
+      for (const finding of findings) {
+        if (finding.relatedTest != null && finding.relatedStep != null && !finding.screenshotPath) {
+          const test = suiteResult.tests.find(t => t.name === finding.relatedTest);
+          const step = test?.steps[finding.relatedStep];
+          if (step?.screenshotPath) {
+            finding.screenshotPath = step.screenshotPath;
+          }
+        }
+      }
+
       const report: AuditReport = {
         verdict,
         findings,

@@ -171,11 +171,7 @@ export class HtmlReporter implements ReporterInterface {
         if (items.length === 0) return "";
         return `<div class="finding-group">
           <h3 style="color: ${severityColors[severity]}; text-transform: uppercase; margin: 16px 0 8px;">${severity} (${items.length})</h3>
-          ${items.map(f => `<div class="finding" style="border-left: 3px solid ${severityColors[f.severity]}; padding: 8px 12px; margin-bottom: 8px; background: white; border-radius: 4px;">
-            <strong>${this.escapeHtml(f.title)}</strong>
-            <p style="color: #666; font-size: 14px; margin-top: 4px;">${this.escapeHtml(f.description)}</p>
-            ${f.relatedTest ? `<span style="color: #999; font-size: 12px;">Test: ${this.escapeHtml(f.relatedTest)}</span>` : ""}
-          </div>`).join("\n")}
+          ${items.map(f => this.renderFinding(f, severityColors[f.severity])).join("\n")}
         </div>`;
       })
       .join("\n");
@@ -198,6 +194,26 @@ export class HtmlReporter implements ReporterInterface {
 
     mkdirSync(this.outputDir, { recursive: true });
     writeFileSync(join(this.outputDir, "report.html"), fullHtml);
+  }
+
+  private renderFinding(f: AuditFinding, borderColor: string): string {
+    let screenshotHtml = "";
+    if (f.screenshotPath) {
+      try {
+        const imgData = readFileSync(f.screenshotPath);
+        const base64 = imgData.toString("base64");
+        screenshotHtml = `<div style="margin-top: 8px;"><img src="data:image/png;base64,${base64}" alt="Screenshot" style="max-width: 100%; border: 1px solid #e5e7eb; border-radius: 4px;"></div>`;
+      } catch {
+        // Screenshot file may not exist
+      }
+    }
+
+    return `<div class="finding" style="border-left: 3px solid ${borderColor}; padding: 8px 12px; margin-bottom: 8px; background: white; border-radius: 4px;">
+      <strong>${this.escapeHtml(f.title)}</strong>
+      <p style="color: #666; font-size: 14px; margin-top: 4px;">${this.escapeHtml(f.description)}</p>
+      ${f.relatedTest ? `<span style="color: #999; font-size: 12px;">Test: ${this.escapeHtml(f.relatedTest)}</span>` : ""}
+      ${screenshotHtml}
+    </div>`;
   }
 
   private escapeHtml(text: string): string {
