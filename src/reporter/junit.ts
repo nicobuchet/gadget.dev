@@ -73,16 +73,10 @@ ${cases}
     }
 
     if (result.status === "fail") {
-      let message = result.error ?? "Unknown error";
-      if (result.analysis) {
-        message += `\n\nAI Analysis: ${result.analysis.summary} [${result.analysis.category}]`;
-        if (result.analysis.suggestedFix) {
-          message += `\nSuggested fix: ${result.analysis.suggestedFix}`;
-        }
-      }
+      const message = result.error ?? "Unknown error";
 
       return `    <testcase name="${this.escapeXml(name)}" classname="${this.escapeXml(testName)}" time="${time}">
-      <failure message="${this.escapeXml(result.error ?? "Unknown error")}">${this.escapeXml(message)}</failure>
+      <failure message="${this.escapeXml(message)}">${this.escapeXml(message)}</failure>
     </testcase>`;
     }
 

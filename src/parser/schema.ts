@@ -59,26 +59,12 @@ const WaitStepSchema = z
     }),
   );
 
-const DoStepSchema = z
-  .object({ do: z.string() })
-  .transform(
-    (v): StepDefinition => ({ type: "do", instruction: v.do }),
-  );
-
-const VerifyStepSchema = z
-  .object({ verify: z.string() })
-  .transform(
-    (v): StepDefinition => ({ type: "verify", assertion: v.verify }),
-  );
-
 export const StepSchema = z.union([
   NavigateStepSchema,
   FillStepSchema,
   ClickStepSchema,
   AssertStepSchema,
   WaitStepSchema,
-  DoStepSchema,
-  VerifyStepSchema,
 ]);
 
 // ── Test Config Schema ──

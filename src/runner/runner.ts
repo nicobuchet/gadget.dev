@@ -15,7 +15,6 @@ import { executeFill } from "./commands/fill.js";
 import { executeClick } from "./commands/click.js";
 import { executeAssert } from "./commands/assert.js";
 import { executeWait } from "./commands/wait.js";
-import type { Analyzer } from "../analyzer/analyzer.js";
 
 async function executeStep(
   step: StepDefinition,
@@ -38,10 +37,6 @@ async function executeStep(
     case "wait":
       await executeWait(step, page, config);
       break;
-    case "do":
-    case "verify":
-      // Handled separately by the runner with AI
-      break;
   }
 }
 
@@ -62,10 +57,6 @@ function describeStep(step: StepDefinition): string {
       if (step.url) return `Wait for URL "${step.url}"`;
       if (step.selector) return `Wait for selector "${step.selector}"`;
       return `Wait ${step.timeout ?? "default"}ms`;
-    case "do":
-      return `Do: ${step.instruction}`;
-    case "verify":
-      return `Verify: ${step.assertion}`;
   }
 }
 
@@ -81,7 +72,6 @@ export async function runTest(
   browserCtx: TestBrowserContext,
   config: GadgetConfig,
   reporter?: ReporterInterface,
-  analyzer?: Analyzer,
 ): Promise<TestResult> {
   const testStart = Date.now();
   const results: StepResult[] = [];
@@ -95,28 +85,12 @@ export async function runTest(
     let result: StepResult;
 
     try {
-      if (step.type === "do" || step.type === "verify") {
-        if (!analyzer) {
-          result = {
-            step,
-            status: "skip",
-            duration: Date.now() - stepStart,
-          };
-        } else if (step.type === "do") {
-          const htmlSummary = await browserCtx.getHtmlSummary(page);
-          result = await analyzer.executeDoStep(page, step.instruction, htmlSummary, testCase.config);
-        } else {
-          const htmlSummary = await browserCtx.getHtmlSummary(page);
-          result = await analyzer.executeVerifyStep(page, step.assertion, htmlSummary, config);
-        }
-      } else {
-        await executeStep(step, page, testCase.config);
-        result = {
-          step,
-          status: "pass",
-          duration: Date.now() - stepStart,
-        };
-      }
+      await executeStep(step, page, testCase.config);
+      result = {
+        step,
+        status: "pass",
+        duration: Date.now() - stepStart,
+      };
 
       // Take screenshot if configured to always
       if (testCase.config.screenshot === "always") {
@@ -147,34 +121,14 @@ export async function runTest(
           `${testCase.name}-step-${stepIndex}-failure.png`,
         );
         try {
-          const screenshotBuffer = await browserCtx.screenshot(page, screenshotPath);
-
-          // AI failure analysis if available
-          if (analyzer) {
-            const htmlSummary = await browserCtx.getHtmlSummary(page);
-            const analysis = await analyzer.analyzeFailure(
-              screenshotBuffer,
-              step,
-              error,
-              htmlSummary,
-            );
-            result = {
-              step,
-              status: "fail",
-              duration: Date.now() - stepStart,
-              error,
-              screenshotPath,
-              analysis,
-            };
-          } else {
-            result = {
-              step,
-              status: "fail",
-              duration: Date.now() - stepStart,
-              error,
-              screenshotPath,
-            };
-          }
+          await browserCtx.screenshot(page, screenshotPath);
+          result = {
+            step,
+            status: "fail",
+            duration: Date.now() - stepStart,
+            error,
+            screenshotPath,
+          };
         } catch {
           result = {
             step,
@@ -223,7 +177,6 @@ export async function runSuite(
   suiteName: string,
   config: GadgetConfig,
   reporter?: ReporterInterface,
-  analyzer?: Analyzer,
 ): Promise<SuiteResult> {
   const suiteStart = Date.now();
   const browserCtx = new TestBrowserContext();
@@ -233,7 +186,7 @@ export async function runSuite(
 
   try {
     for (const testCase of tests) {
-      const result = await runTest(testCase, browserCtx, config, reporter, analyzer);
+      const result = await runTest(testCase, browserCtx, config, reporter);
       testResults.push(result);
     }
   } finally {

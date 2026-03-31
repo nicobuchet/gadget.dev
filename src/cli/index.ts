@@ -80,18 +80,11 @@ program
       const reporterNames = (options.reporter as string).split(",");
       const reporter = createReporters(reporterNames, config.output.dir);
 
-      // Create analyzer if AI provider is configured
-      let analyzer: Analyzer | undefined;
-      const provider = createProvider(config);
-      if (provider) {
-        analyzer = new Analyzer(provider);
-      }
-
       // Ensure output directory exists
       mkdirSync(config.output.dir, { recursive: true });
 
       // Run
-      const result = await runSuite(tests, "Gadget Run", config, reporter, analyzer);
+      const result = await runSuite(tests, "Gadget Run", config, reporter);
 
       process.exitCode = result.failed > 0 ? 1 : 0;
     } catch (err) {
@@ -233,7 +226,7 @@ program
       mkdirSync(config.output.dir, { recursive: true });
 
       // Run the suite
-      const suiteResult = await runSuite(tests, "Gadget Audit", config, reporter, analyzer);
+      const suiteResult = await runSuite(tests, "Gadget Audit", config, reporter);
 
       // Perform holistic AI audit with spinner
       const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -344,8 +337,6 @@ steps:
 
   - assert:
       title: "Example Domain"
-
-  - verify: "The page displays a heading and a paragraph of text"
 `;
 
     if (!existsSync(".gadgetrc.yaml")) {

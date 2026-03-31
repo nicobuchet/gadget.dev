@@ -122,16 +122,6 @@ export class HtmlReporter implements ReporterInterface {
       extra += `<div class="error">${this.escapeHtml(result.error)}</div>`;
     }
 
-    if (result.analysis) {
-      extra += `<div class="analysis">
-        <h4>AI Analysis</h4>
-        <span class="category">${result.analysis.category}</span>
-        <p>${this.escapeHtml(result.analysis.summary)}</p>
-        <p>${this.escapeHtml(result.analysis.details)}</p>
-        ${result.analysis.suggestedFix ? `<p><strong>Suggested fix:</strong> ${this.escapeHtml(result.analysis.suggestedFix)}</p>` : ""}
-      </div>`;
-    }
-
     if (result.screenshotPath) {
       try {
         const imgData = readFileSync(result.screenshotPath);
