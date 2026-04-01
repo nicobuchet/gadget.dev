@@ -86,6 +86,7 @@ export class HtmlReporter implements ReporterInterface {
     </div>
   </div>
   ${testsHtml}
+  <!-- AUDIT_PLACEHOLDER -->
   <script>
     document.querySelectorAll('.test-header').forEach(h => {
       h.addEventListener('click', () => h.closest('.test').classList.toggle('open'));
@@ -166,21 +167,23 @@ export class HtmlReporter implements ReporterInterface {
       })
       .join("\n");
 
+    const scoreColor = report.verdict.qualityScore >= 80 ? '#22c55e' : report.verdict.qualityScore >= 50 ? '#f59e0b' : '#ef4444';
+
     const auditHtml = `<div class="audit-section" style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
       <h2 style="margin-bottom: 12px;">Audit Verdict</h2>
       <div style="display: inline-block; padding: 8px 16px; border-radius: 6px; color: white; font-weight: bold; font-size: 18px; background: ${verdictColors[report.verdict.readiness]};">
         ${report.verdict.readiness.toUpperCase()}
       </div>
-      <span style="font-size: 18px; font-weight: bold; margin-left: 16px; color: ${report.verdict.qualityScore >= 80 ? '#22c55e' : report.verdict.qualityScore >= 50 ? '#f59e0b' : '#ef4444'};">${report.verdict.qualityScore}/100</span>
+      <span style="font-size: 18px; font-weight: bold; margin-left: 16px; color: ${scoreColor};">${report.verdict.qualityScore}/100</span>
       <span style="color: #666; margin-left: 12px;">Confidence: ${(report.verdict.confidence * 100).toFixed(0)}%</span>
       <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">${this.escapeHtml(report.verdict.summary)}</p>
       ${findingsHtml}
     </div>`;
 
-    // Re-generate the full report with audit section inserted after the header
+    // Re-generate the full report with audit section replacing the placeholder
     const fullHtml = this.generateHtml(report.suiteResult).replace(
-      "</div>\n  <div class=\"test",
-      `</div>\n  ${auditHtml}\n  <div class="test`,
+      "<!-- AUDIT_PLACEHOLDER -->",
+      auditHtml,
     );
 
     mkdirSync(this.outputDir, { recursive: true });

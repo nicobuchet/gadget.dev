@@ -169,6 +169,13 @@ program
     try {
       const auditStart = Date.now();
 
+      // Validate --min-score range
+      if (options.minScore != null && (options.minScore < 0 || options.minScore > 100)) {
+        console.error("Error: --min-score must be between 0 and 100");
+        process.exitCode = 2;
+        return;
+      }
+
       // Load config
       const fileConfig = parseConfig(process.cwd());
       const config = mergeConfig(fileConfig, options);
