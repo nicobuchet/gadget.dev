@@ -1,14 +1,32 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
 import type {
   AIProvider,
   SuiteResult,
   AuditVerdict,
   AuditFinding,
 } from "../../types/index.js";
+import { SEVERITY_WEIGHTS } from "../../types/index.js";
 import {
   auditSystemPrompt,
   auditUserPrompt,
 } from "../prompts.js";
+
+const AuditResponseSchema = z.object({
+  verdict: z.object({
+    readiness: z.enum(["ready", "not-ready", "needs-attention"]),
+    confidence: z.number().min(0).max(1),
+    qualityScore: z.number().int().min(0).max(100).default(0),
+    summary: z.string(),
+  }),
+  findings: z.array(z.object({
+    severity: z.enum(["critical", "warning", "nitpick", "improvement"]),
+    title: z.string(),
+    description: z.string(),
+    relatedTest: z.string().optional(),
+    relatedStep: z.number().optional(),
+  })),
+});
 
 export class ClaudeProvider implements AIProvider {
   name = "claude";
@@ -79,10 +97,25 @@ export class ClaudeProvider implements AIProvider {
       messages: [{ role: "user", content: contentBlocks }],
     });
 
-    return this.parseJson<{ verdict: AuditVerdict; findings: AuditFinding[] }>(response);
+    const raw = this.extractJson(response) as Record<string, unknown>;
+    const parsed = AuditResponseSchema.parse(raw);
+
+    // Compute qualityScore from findings if AI omitted it
+    const rawVerdict = raw.verdict as Record<string, unknown> | undefined;
+    const aiProvidedScore = rawVerdict?.qualityScore != null;
+    const qualityScore = aiProvidedScore
+      ? parsed.verdict.qualityScore
+      : Math.max(0, 100 - parsed.findings.reduce(
+          (sum, f) => sum + (SEVERITY_WEIGHTS[f.severity] ?? 0), 0,
+        ));
+
+    return {
+      verdict: { ...parsed.verdict, qualityScore },
+      findings: parsed.findings,
+    };
   }
 
-  private parseJson<T>(response: Anthropic.Message): T {
+  private extractJson(response: Anthropic.Message): unknown {
     const textBlock = response.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
       throw new Error("No text response from Claude");
@@ -95,6 +128,6 @@ export class ClaudeProvider implements AIProvider {
       text = jsonMatch[1].trim();
     }
 
-    return JSON.parse(text) as T;
+    return JSON.parse(text);
   }
 }

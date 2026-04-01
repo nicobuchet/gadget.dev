@@ -207,6 +207,8 @@ gadget audit <paths...>     Run tests + AI production readiness assessment
   --output <dir>            Output directory for reports/screenshots
   --provider <name>         AI provider (required)
   --stop-on-failure         Stop on first failure
+  --settle <ms>             Wait time after each step before screenshot
+  --min-score <n>           Minimum quality score (0-100) to pass the audit
 
 gadget validate <paths...>  Validate test files without running
 gadget init                 Scaffold config and example test
@@ -222,6 +224,39 @@ pnpm exec gadget audit tests/ --base-url https://staging.myapp.com
 ```
 
 The AI looks at each screenshot and evaluates the application from a user's perspective: layout, readability, visual bugs, broken flows, UX friction. It does **not** comment on test coverage, security practices, or code quality — only on what a real user would see and experience.
+
+### Quality Score
+
+The AI assigns a **quality score from 0 to 100** based on the overall user experience. The score starts at 100 and is reduced based on findings:
+
+| Finding severity | Deduction |
+|------------------|-----------|
+| Critical | -20 |
+| Warning | -10 |
+| Nitpick | -3 |
+| Improvement | -1 |
+
+The AI uses this as a guideline but may adjust the score based on its overall impression — for example, a single critical bug that blocks the entire flow may warrant a lower score than the formula suggests.
+
+A score of **80+** generally means the feature is ready for production.
+
+#### Using quality score as a CI gate
+
+Use `--min-score` to fail the audit if the score is below a threshold:
+
+```bash
+# Fail if quality score is below 80
+pnpm exec gadget audit tests/ --base-url https://staging.myapp.com --min-score 80
+```
+
+You can also set the threshold in `.gadgetrc.yaml`:
+
+```yaml
+audit:
+  minScore: 80
+```
+
+The CLI flag overrides the config value. Exit code is `1` when the score falls below the threshold.
 
 ### Verdict
 
@@ -242,10 +277,10 @@ The AI deduplicates findings: if the same issue appears across multiple flows, i
 
 ### Output
 
-- Console: color-coded verdict banner with findings grouped by severity
-- JSON: `audit-report.json` in the output directory (always generated)
-- HTML: verdict section injected at the top of the HTML report
-- GitHub: `::error`/`::warning` annotations + `GITHUB_STEP_SUMMARY` markdown
+- Console: color-coded verdict banner with quality score and findings grouped by severity
+- JSON: `audit-report.json` in the output directory (always generated), includes `verdict.qualityScore`
+- HTML: verdict section with quality score badge at the top of the HTML report
+- GitHub: `::error`/`::warning` annotations + `GITHUB_STEP_SUMMARY` markdown table with quality score
 
 ### Configuration
 
@@ -254,6 +289,7 @@ Add an optional `audit` section to `.gadgetrc.yaml`:
 ```yaml
 audit:
   maxTokens: 4096    # max output tokens for the AI audit response
+  minScore: 80       # fail if quality score is below this threshold (0-100)
 ```
 
 ## Reporters
@@ -364,7 +400,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run Gadget Audit
-        run: pnpm exec gadget audit tests/ --base-url ${{ vars.STAGING_URL }} --reporter console,json,github
+        run: pnpm exec gadget audit tests/ --base-url ${{ vars.STAGING_URL }} --reporter console,json,github --min-score 80
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - uses: actions/upload-artifact@v4
@@ -384,7 +420,7 @@ gadget-audit:
     - corepack enable
   script:
     - pnpm install --frozen-lockfile
-    - pnpm exec gadget audit tests/ --base-url $STAGING_URL --reporter console,json
+    - pnpm exec gadget audit tests/ --base-url $STAGING_URL --reporter console,json --min-score 80
   artifacts:
     when: always
     paths:
@@ -414,6 +450,6 @@ Full example files are available in the `examples/` directory.
 
 | Code | Meaning |
 |------|---------|
-| `0` | Verdict is "ready" with no critical findings |
-| `1` | Verdict is "not-ready" or critical findings exist |
+| `0` | Verdict is "ready" with no critical findings and quality score is above `--min-score` (if set) |
+| `1` | Verdict is "not-ready", critical findings exist, or quality score is below `--min-score` |
 | `2` | Configuration or execution error |

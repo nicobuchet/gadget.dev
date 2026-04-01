@@ -68,6 +68,7 @@ export class GithubReporter implements ReporterInterface {
       md += `> ${report.verdict.summary}\n\n`;
       md += `| Metric | Value |\n|--------|-------|\n`;
       md += `| Readiness | ${report.verdict.readiness} |\n`;
+      md += `| Quality Score | ${report.verdict.qualityScore}/100 |\n`;
       md += `| Confidence | ${(report.verdict.confidence * 100).toFixed(0)}% |\n`;
       md += `| Tests Passed | ${report.suiteResult.passed}/${report.suiteResult.tests.length} |\n`;
       md += `| Critical Issues | ${criticals} |\n`;

@@ -117,6 +117,13 @@ export interface AIProvider {
 
 export type FeedbackSeverity = "critical" | "warning" | "nitpick" | "improvement";
 
+export const SEVERITY_WEIGHTS: Record<FeedbackSeverity, number> = {
+  critical: 20,
+  warning: 10,
+  nitpick: 3,
+  improvement: 1,
+};
+
 export interface AuditFinding {
   severity: FeedbackSeverity;
   title: string;
@@ -131,6 +138,7 @@ export type ProductionReadiness = "ready" | "not-ready" | "needs-attention";
 export interface AuditVerdict {
   readiness: ProductionReadiness;
   confidence: number;
+  qualityScore: number;
   summary: string;
 }
 
@@ -168,6 +176,7 @@ export interface GadgetConfig {
   };
   audit?: {
     maxTokens?: number;
+    minScore?: number;
   };
 }
 
