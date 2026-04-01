@@ -73,6 +73,9 @@ export class ConsoleReporter implements ReporterInterface {
     console.log(chalk.bold("  AUDIT VERDICT"));
     console.log(chalk.bold("═════════════════════════════════"));
     console.log(color.bold(`  ${report.verdict.readiness.toUpperCase()}`));
+    const score = report.verdict.qualityScore;
+    const scoreColor = score >= 80 ? chalk.green : score >= 50 ? chalk.yellow : chalk.red;
+    console.log(scoreColor.bold(`  Quality Score: ${score}/100`));
     console.log(chalk.gray(`  Confidence: ${(report.verdict.confidence * 100).toFixed(0)}%`));
     console.log(`\n  ${report.verdict.summary}`);
 

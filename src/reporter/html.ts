@@ -171,6 +171,7 @@ export class HtmlReporter implements ReporterInterface {
       <div style="display: inline-block; padding: 8px 16px; border-radius: 6px; color: white; font-weight: bold; font-size: 18px; background: ${verdictColors[report.verdict.readiness]};">
         ${report.verdict.readiness.toUpperCase()}
       </div>
+      <span style="font-size: 18px; font-weight: bold; margin-left: 16px; color: ${report.verdict.qualityScore >= 80 ? '#22c55e' : report.verdict.qualityScore >= 50 ? '#f59e0b' : '#ef4444'};">${report.verdict.qualityScore}/100</span>
       <span style="color: #666; margin-left: 12px;">Confidence: ${(report.verdict.confidence * 100).toFixed(0)}%</span>
       <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">${this.escapeHtml(report.verdict.summary)}</p>
       ${findingsHtml}

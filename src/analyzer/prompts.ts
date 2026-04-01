@@ -32,6 +32,7 @@ Respond ONLY with a JSON object matching this schema:
   "verdict": {
     "readiness": "ready" | "not-ready" | "needs-attention",
     "confidence": 0.0 to 1.0,
+    "qualityScore": 0 to 100,
     "summary": "holistic paragraph assessing the application from a user perspective"
   },
   "findings": [
@@ -44,6 +45,11 @@ Respond ONLY with a JSON object matching this schema:
     }
   ]
 }
+
+Quality score guidelines:
+- Start at 100 and deduct based on findings: critical issues (-20 each), warnings (-10 each), nitpicks (-3 each), improvements (-1 each).
+- Use this as a baseline but adjust based on the overall impression — a single critical bug that blocks the entire flow may warrant a lower score than the formula suggests.
+- The score must be an integer between 0 and 100. A score of 80+ generally means the feature is ready for production.
 
 Guidelines for the verdict:
 - "ready": The UI works and looks good. The user can complete all tested flows without issues.

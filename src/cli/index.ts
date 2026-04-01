@@ -164,6 +164,7 @@ program
   .option("--provider <name>", "AI provider name")
   .option("--stop-on-failure", "stop on first failure")
   .option("--settle <ms>", "wait time (ms) after each step for page to settle before screenshot", parseInt)
+  .option("--min-score <score>", "minimum quality score (0-100) to pass the audit", parseInt)
   .action(async (paths: string[], options) => {
     try {
       const auditStart = Date.now();
@@ -264,9 +265,14 @@ program
       const screenshotsDir = join(config.output.dir, "screenshots");
       rmSync(screenshotsDir, { recursive: true, force: true });
 
-      // Exit code: 0 = ready, 1 = not-ready or has criticals
+      // Exit code: 0 = ready, 1 = not-ready, has criticals, or below min score
       const hasCriticals = findings.some(f => f.severity === "critical");
-      if (verdict.readiness === "not-ready" || hasCriticals) {
+      const minScore = options.minScore ?? config.audit?.minScore;
+      const belowMinScore = minScore != null && verdict.qualityScore < minScore;
+      if (verdict.readiness === "not-ready" || hasCriticals || belowMinScore) {
+        if (belowMinScore) {
+          console.error(`\nQuality score ${verdict.qualityScore} is below the minimum threshold of ${minScore}`);
+        }
         process.exitCode = 1;
       } else {
         process.exitCode = 0;

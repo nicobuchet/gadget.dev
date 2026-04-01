@@ -131,6 +131,7 @@ export type ProductionReadiness = "ready" | "not-ready" | "needs-attention";
 export interface AuditVerdict {
   readiness: ProductionReadiness;
   confidence: number;
+  qualityScore: number;
   summary: string;
 }
 
@@ -168,6 +169,7 @@ export interface GadgetConfig {
   };
   audit?: {
     maxTokens?: number;
+    minScore?: number;
   };
 }
 
