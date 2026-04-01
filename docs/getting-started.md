@@ -10,13 +10,13 @@ git clone git@gitlab.com:pyratzlabs/software/gadget.git
 cd gadget
 
 # Install dependencies
-npm install
+pnpm install
 
 # Install Playwright browsers
-npx playwright install chromium
+pnpm exec playwright install chromium
 
 # Build
-npm run build
+pnpm build
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ npm run build
 ### 1. Initialize a project
 
 ```bash
-npx gadget init
+pnpm exec gadget init
 ```
 
 This creates:
@@ -34,7 +34,7 @@ This creates:
 ### 2. Run your first test
 
 ```bash
-npx gadget run tests/example.test.yaml
+pnpm exec gadget run tests/example.test.yaml
 ```
 
 You should see colored console output with pass/fail results for each step.
@@ -42,7 +42,7 @@ You should see colored console output with pass/fail results for each step.
 ### 3. Run in headed mode (visible browser)
 
 ```bash
-npx gadget run tests/example.test.yaml --headed
+pnpm exec gadget run tests/example.test.yaml --headed
 ```
 
 ## Writing Tests
@@ -218,7 +218,7 @@ gadget providers            List available AI providers and their status
 The `audit` command turns Gadget into an **AI beta tester**. It runs all test flows with screenshots captured at every step, then sends them to Claude to review the actual UI — exactly as a human tester would.
 
 ```bash
-npx gadget audit tests/ --base-url https://staging.myapp.com
+pnpm exec gadget audit tests/ --base-url https://staging.myapp.com
 ```
 
 The AI looks at each screenshot and evaluates the application from a user's perspective: layout, readability, visual bugs, broken flows, UX friction. It does **not** comment on test coverage, security practices, or code quality — only on what a real user would see and experience.
@@ -267,7 +267,7 @@ Colored terminal output with pass/fail per step.
 Generates a self-contained HTML report with embedded screenshots:
 
 ```bash
-npx gadget run tests/ --reporter console,html
+pnpm exec gadget run tests/ --reporter console,html
 # Report saved to .gadget/results/report.html
 ```
 
@@ -276,7 +276,7 @@ npx gadget run tests/ --reporter console,html
 Standard JUnit XML for CI/CD integration:
 
 ```bash
-npx gadget run tests/ --reporter junit
+pnpm exec gadget run tests/ --reporter junit
 # Report saved to .gadget/results/junit.xml
 ```
 
@@ -285,10 +285,10 @@ npx gadget run tests/ --reporter junit
 Writes structured JSON files for CI artifact consumption:
 
 ```bash
-npx gadget run tests/ --reporter json
+pnpm exec gadget run tests/ --reporter json
 # Saves .gadget/results/suite-result.json
 
-npx gadget audit tests/ --base-url https://myapp.com
+pnpm exec gadget audit tests/ --base-url https://myapp.com
 # Saves .gadget/results/suite-result.json and .gadget/results/audit-report.json
 ```
 
@@ -299,13 +299,13 @@ The `audit` command always includes the JSON reporter automatically.
 Emits `::error` annotations for inline PR feedback. For `audit`, also writes a markdown summary to `GITHUB_STEP_SUMMARY`:
 
 ```bash
-npx gadget run tests/ --reporter console,github
+pnpm exec gadget run tests/ --reporter console,github
 ```
 
 Use multiple reporters at once:
 
 ```bash
-npx gadget run tests/ --reporter console,html,junit
+pnpm exec gadget run tests/ --reporter console,html,junit
 ```
 
 ## Test Suites
@@ -328,13 +328,13 @@ tests:
 Run the suite:
 
 ```bash
-npx gadget run tests/suite.yaml
+pnpm exec gadget run tests/suite.yaml
 ```
 
 Or run all tests in a directory:
 
 ```bash
-npx gadget run tests/
+pnpm exec gadget run tests/
 ```
 
 ## CI Integration
@@ -360,10 +360,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - name: Run Gadget Audit
-        run: npx gadget audit tests/ --base-url ${{ vars.STAGING_URL }} --reporter console,json,github
+        run: pnpm exec gadget audit tests/ --base-url ${{ vars.STAGING_URL }} --reporter console,json,github
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - uses: actions/upload-artifact@v4
@@ -379,9 +380,11 @@ jobs:
 gadget-audit:
   image: mcr.microsoft.com/playwright:v1.50.0-noble
   stage: test
+  before_script:
+    - corepack enable
   script:
-    - npm ci
-    - npx gadget audit tests/ --base-url $STAGING_URL --reporter console,json
+    - pnpm install --frozen-lockfile
+    - pnpm exec gadget audit tests/ --base-url $STAGING_URL --reporter console,json
   artifacts:
     when: always
     paths:
