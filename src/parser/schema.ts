@@ -127,6 +127,12 @@ export const GadgetConfigSchema = z.object({
       reporters: z.array(z.string()).default(["console"]),
     })
     .default({}),
+  audit: z
+    .object({
+      maxTokens: z.number().default(4096),
+      minScore: z.number().min(0).max(100).optional(),
+    })
+    .optional(),
   check: z
     .object({
       baseBranch: z.string().default("main"),

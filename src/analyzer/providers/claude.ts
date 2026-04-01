@@ -79,7 +79,18 @@ export class ClaudeProvider implements AIProvider {
       messages: [{ role: "user", content: contentBlocks }],
     });
 
-    return this.parseJson<{ verdict: AuditVerdict; findings: AuditFinding[] }>(response);
+    const result = this.parseJson<{ verdict: AuditVerdict; findings: AuditFinding[] }>(response);
+
+    // Ensure qualityScore is present — compute from findings if AI omitted it
+    if (result.verdict.qualityScore == null) {
+      const deductions = result.findings.reduce((sum, f) => {
+        const weights = { critical: 20, warning: 10, nitpick: 3, improvement: 1 };
+        return sum + (weights[f.severity] ?? 0);
+      }, 0);
+      result.verdict.qualityScore = Math.max(0, 100 - deductions);
+    }
+
+    return result;
   }
 
   private parseJson<T>(response: Anthropic.Message): T {

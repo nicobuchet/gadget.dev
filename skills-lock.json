@@ -36,6 +36,11 @@
       "sourceType": "git",
       "computedHash": "286d6cea6dfeaed42421e24951db6f72195a3542bbaa1f1e748d7111f22a88cb"
     },
+    "freeze": {
+      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "sourceType": "git",
+      "computedHash": "3220eda81eae8582c083e5eefa2a32038684d8ab4d06f07964dcbabdb606ff9b"
+    },
     "verify-build": {
       "source": "git@gitlab.com:artificial-lab/agent-skills.git",
       "sourceType": "git",
