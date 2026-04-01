@@ -2,14 +2,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import type {
   AIProvider,
-  SuiteResult,
+  TestResult,
   AuditVerdict,
   AuditFinding,
 } from "../../types/index.js";
 import { SEVERITY_WEIGHTS } from "../../types/index.js";
 import {
   auditSystemPrompt,
-  auditUserPrompt,
+  auditTestUserPrompt,
 } from "../prompts.js";
 
 const AuditResponseSchema = z.object({
@@ -23,7 +23,6 @@ const AuditResponseSchema = z.object({
     severity: z.enum(["critical", "warning", "nitpick", "improvement"]),
     title: z.string(),
     description: z.string(),
-    relatedTest: z.string().optional(),
     relatedStep: z.number().optional(),
   })),
 });
@@ -59,17 +58,15 @@ export class ClaudeProvider implements AIProvider {
     return textBlock.text;
   }
 
-  async auditSuite(input: {
-    suiteResult: SuiteResult;
-    screenshots: Array<{ testName: string; stepIndex: number; data: Buffer }>;
-    testDescriptions: Array<{ name: string; steps: string[] }>;
+  async auditTest(input: {
+    testResult: TestResult;
+    screenshots: Array<{ stepIndex: number; data: Buffer }>;
+    stepDescriptions: string[];
     maxTokens: number;
   }): Promise<{ verdict: AuditVerdict; findings: AuditFinding[] }> {
     const contentBlocks: Anthropic.MessageCreateParams["messages"][0]["content"] = [];
 
-    // Add up to 20 screenshots — the AI needs to see the full UI flow
-    const screenshotSlice = input.screenshots.slice(0, 20);
-    for (const screenshot of screenshotSlice) {
+    for (const screenshot of input.screenshots) {
       contentBlocks.push({
         type: "image",
         source: {
@@ -80,14 +77,13 @@ export class ClaudeProvider implements AIProvider {
       });
       contentBlocks.push({
         type: "text",
-        text: `[Screenshot: ${screenshot.testName} — step ${screenshot.stepIndex}]`,
+        text: `[Screenshot: step ${screenshot.stepIndex}]`,
       });
     }
 
-    // Add the text prompt
     contentBlocks.push({
       type: "text",
-      text: auditUserPrompt(input.suiteResult, input.testDescriptions),
+      text: auditTestUserPrompt(input.testResult, input.stepDescriptions),
     });
 
     const response = await this.client.messages.create({

@@ -1,4 +1,4 @@
-import type { SuiteResult, TestResult, StepResult } from "../types/index.js";
+import type { TestResult, StepResult } from "../types/index.js";
 
 // ── Audit Prompts ──
 
@@ -33,14 +33,13 @@ Respond ONLY with a JSON object matching this schema:
     "readiness": "ready" | "not-ready" | "needs-attention",
     "confidence": 0.0 to 1.0,
     "qualityScore": 0 to 100,
-    "summary": "holistic paragraph assessing the application from a user perspective"
+    "summary": "short paragraph assessing this specific flow from a user perspective"
   },
   "findings": [
     {
       "severity": "critical" | "warning" | "nitpick" | "improvement",
       "title": "short descriptive title",
       "description": "detailed explanation of what you see and your recommendation",
-      "relatedTest": "test name (optional)",
       "relatedStep": step_index_number (optional)
     }
   ]
@@ -52,47 +51,42 @@ Quality score guidelines:
 - The score must be an integer between 0 and 100. A score of 80+ generally means the feature is ready for production.
 
 Guidelines for the verdict:
-- "ready": The UI works and looks good. The user can complete all tested flows without issues.
-- "not-ready": There are broken screens or flows that prevent users from completing core tasks.
-- "needs-attention": The flows work but there are visible UI/UX problems worth fixing before release.
+- "ready": The UI works and looks good. The user can complete the tested flow without issues.
+- "not-ready": There are broken screens or steps that prevent the user from completing the flow.
+- "needs-attention": The flow works but there are visible UI/UX problems worth fixing before release.
 
-If you have no screenshots to review, base your verdict only on whether the flows succeeded or failed.`;
+If you have no screenshots to review, base your verdict only on whether the flow succeeded or failed.`;
 }
 
-export function auditUserPrompt(
-  suiteResult: SuiteResult,
-  testDescriptions: Array<{ name: string; steps: string[] }>,
+export function auditTestUserPrompt(
+  testResult: TestResult,
+  stepDescriptions: string[],
 ): string {
-  const flowSummaries = suiteResult.tests.map((test: TestResult) => {
-    const outcome = test.status === "pass" ? "completed successfully" : "failed";
-    const failedSteps = test.steps
-      .map((step: StepResult, i: number) => ({ step, index: i }))
-      .filter(({ step }) => step.status === "fail")
-      .map(({ step, index }) => `  - Step ${index} failed: ${step.error ?? "unknown error"}`)
-      .join("\n");
+  const outcome = testResult.status === "pass" ? "completed successfully" : "failed";
+  const failedSteps = testResult.steps
+    .map((step: StepResult, i: number) => ({ step, index: i }))
+    .filter(({ step }) => step.status === "fail")
+    .map(({ step, index }) => `  - Step ${index} failed: ${step.error ?? "unknown error"}`)
+    .join("\n");
 
-    return `### ${test.name} — ${outcome}
-${failedSteps ? `Failed steps:\n${failedSteps}` : "All steps passed."}`;
-  }).join("\n\n");
+  const lastIndex = stepDescriptions.length - 1;
+  const steps = stepDescriptions.map((s, i) => {
+    const label = i === lastIndex
+      ? `  ${i}. ${s}  ← FINAL STEP (confirmation only — do NOT review this page)`
+      : `  ${i}. ${s}`;
+    return label;
+  }).join("\n");
 
-  const flowDescriptions = testDescriptions.map(t => {
-    const lastIndex = t.steps.length - 1;
-    const steps = t.steps.map((s, i) => {
-      const label = i === lastIndex ? `  ${i}. ${s}  ← FINAL STEP (confirmation only — do NOT review this page)` : `  ${i}. ${s}`;
-      return label;
-    }).join("\n");
-    return `### ${t.name}\nUser journey:\n${steps}`;
-  }).join("\n\n");
-
-  return `The screenshots above show what the user sees at each step of the following flows. Review them as a beta tester would.
+  return `The screenshots above show the user's journey through the "${testResult.name}" flow. Review them as a beta tester would.
 
 IMPORTANT: Only review the pages that are part of the flow itself. The last screenshot is typically a redirect/confirmation that the flow succeeded — do NOT review or critique that destination page.
 
-## Flows Tested
-${flowDescriptions}
+## Flow: ${testResult.name}
+User journey:
+${steps}
 
-## Outcomes
-${flowSummaries}
+## Outcome — ${outcome}
+${failedSteps ? `Failed steps:\n${failedSteps}` : "All steps passed."}
 
 Provide your feedback ONLY on the flow pages (not the destination after completion) as JSON.`;
 }

@@ -97,17 +97,16 @@ export interface SuiteResult {
 export interface AIProvider {
   name: string;
 
-
   generateTests?(input: {
     systemPrompt: string;
     userPrompt: string;
     maxTokens: number;
   }): Promise<string>;
 
-  auditSuite?(input: {
-    suiteResult: SuiteResult;
-    screenshots: Array<{ testName: string; stepIndex: number; data: Buffer }>;
-    testDescriptions: Array<{ name: string; steps: string[] }>;
+  auditTest?(input: {
+    testResult: TestResult;
+    screenshots: Array<{ stepIndex: number; data: Buffer }>;
+    stepDescriptions: string[];
     maxTokens: number;
   }): Promise<{ verdict: AuditVerdict; findings: AuditFinding[] }>;
 }
