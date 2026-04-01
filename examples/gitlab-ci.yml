@@ -10,9 +10,11 @@
 gadget-audit:
   image: mcr.microsoft.com/playwright:v1.50.0-noble
   stage: test
+  before_script:
+    - corepack enable
   script:
-    - npm ci
-    - npx gadget audit tests/ --base-url $STAGING_URL --reporter console,json
+    - pnpm install --frozen-lockfile
+    - pnpm exec gadget audit tests/ --base-url $STAGING_URL --reporter console,json
   artifacts:
     when: always
     paths:
