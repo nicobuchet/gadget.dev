@@ -127,4 +127,5 @@ Project settings live in `.gadgetrc.yaml` (created by `gadget init`). CLI flags 
 
 ## Documentation
 
-For the complete guide — all step types, test suites, variable interpolation, audit configuration, CI examples, and exit codes — see **[docs/getting-started.md](docs/getting-started.md)**.
+- **[Getting Started](docs/getting-started.md)** — full guide with all step types, test suites, variable interpolation, CI examples, and exit codes
+- **[API Reference](docs/api-reference.md)** — complete CLI options, configuration schema, test file format, and TypeScript types
