@@ -45,6 +45,31 @@
       "source": "git@gitlab.com:artificial-lab/agent-skills.git",
       "sourceType": "git",
       "computedHash": "e23f89f27125bd16fafea6a395b5f95ad09e58820cc8c3402e1b6eb262dbeb9d"
+    },
+    "gadget-init": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "9b82274d523e12b12bbd989f6a5f8d8e797a50625eff9ca72dc5d06cff082bca"
+    },
+    "gadget-run": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "4b20277005bbcc3f90023c49e174dee365d03a9ef0126d37dcf05d9a4f6a8625"
+    },
+    "gadget-audit": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "97055f450766094208117e12a2761040580b68685cfa02d658180503b5a2ad86"
+    },
+    "gadget-check": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "96649872d1d0a46e5b431fd46df47d5e942e06fa1037ba48302e3c9cdf1570b4"
+    },
+    "gadget-validate": {
+      "source": "local",
+      "sourceType": "local",
+      "computedHash": "eb173e46ab3835a33d22af0e82a0244e3075b92b38018bf5f475861e78f6ead0"
     }
   }
 }

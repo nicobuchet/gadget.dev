@@ -121,6 +121,34 @@ Gadget is designed to run in CI pipelines. Example workflow files are available 
 
 See the [full documentation](docs/getting-started.md) for detailed CI setup guides.
 
+## Claude Code Skills
+
+Gadget ships with a set of [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) in the `skills/` directory. These let you run Gadget commands conversationally inside Claude Code using slash commands:
+
+| Skill | Slash Command | Description |
+|-------|-------------|-------------|
+| `gadget-init` | `/gadget-init` | Scaffold a project with guided setup |
+| `gadget-run` | `/gadget-run` | Run E2E tests with file discovery and failure analysis |
+| `gadget-audit` | `/gadget-audit` | AI-powered production readiness assessment |
+| `gadget-check` | `/gadget-check` | Auto-generate tests from git diff |
+| `gadget-validate` | `/gadget-validate` | Validate YAML test files with auto-fix |
+
+Each skill wraps the corresponding `npx @pyratzlabs/gadget` command and adds intelligent parameter discovery, prerequisite checking, result interpretation, and follow-up suggestions.
+
+### Using the skills
+
+1. Install skills into your project:
+   ```bash
+   npx skills install @pyratzlabs/gadget
+   ```
+
+2. Invoke a skill in Claude Code:
+   ```
+   /gadget-audit
+   ```
+
+Claude will guide you through the rest — checking prerequisites, discovering test files, running the command, and interpreting results.
+
 ## Configuration
 
 Project settings live in `.gadgetrc.yaml` (created by `gadget init`). CLI flags override config values. See the [getting started guide](docs/getting-started.md) for all options.
