@@ -1,5 +1,5 @@
 {
-  "name": "gadget",
+  "name": "@pyratzlabs/gadget",
   "version": "0.1.0",
   "type": "module",
   "description": "AI-powered E2E testing CLI tool",
@@ -7,6 +7,10 @@
   "bin": {
     "gadget": "./dist/cli/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
