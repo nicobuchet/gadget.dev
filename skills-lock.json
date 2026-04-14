@@ -2,47 +2,47 @@
   "version": 1,
   "skills": {
     "adversarial-review": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "cd477bfb701aa5aa7d9d134b74e46e4ee52a5a0664b65c8dace9e08fe063be32"
     },
     "babysit-pr": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "264e83a4d21a8b76dc1f8e21e5b59d02fd348ddfceaa468adbc8fb15fdf45fab"
     },
     "careful": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "f4328993ba4887e681c31385dd8ca44300eb2be6cfadac0fc4baedcc730b5987"
     },
     "cleanup-dead-code": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "0f2459a7ffff9a035b7af69444a9d8d27e26f19236415a40ef2bd7a74e0d42f9"
     },
     "commit-push-pr": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "fe38deb70f5d9f3b6b1c1ade4da57097b09534a4e5928ee6a0a04de9e118de04"
     },
     "debug-typescript": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "e5983c4527cb8479cf6cff28ba62771bb122e21e05021de3005972abfcdc09ba"
     },
     "dependency-update": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "286d6cea6dfeaed42421e24951db6f72195a3542bbaa1f1e748d7111f22a88cb"
     },
     "freeze": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "3220eda81eae8582c083e5eefa2a32038684d8ab4d06f07964dcbabdb606ff9b"
     },
     "verify-build": {
-      "source": "git@gitlab.com:artificial-lab/agent-skills.git",
+      "source": "https://github.com/nicobuchet/gadget.dev.git",
       "sourceType": "git",
       "computedHash": "e23f89f27125bd16fafea6a395b5f95ad09e58820cc8c3402e1b6eb262dbeb9d"
     },

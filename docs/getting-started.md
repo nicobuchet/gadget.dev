@@ -6,7 +6,7 @@ Gadget is an AI-powered E2E testing CLI tool that acts as an agentic beta tester
 
 ```bash
 # Clone the repository
-git clone git@gitlab.com:pyratzlabs/software/gadget.git
+git clone https://github.com/nicobuchet/gadget.dev.git
 cd gadget
 
 # Install dependencies

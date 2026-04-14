@@ -2,3 +2,4 @@ node_modules/
 dist/
 .gadget/
 .gadgetrc.yaml
+.env*
