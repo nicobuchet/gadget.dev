@@ -29,9 +29,15 @@ export class Analyzer {
     const auditPromises = suiteResult.tests.map((testResult, idx) => {
       const testCase = tests[idx];
 
-      // Collect screenshots for this test
+      // Collect screenshots for this test. Skip the final step — auditSystemPrompt
+      // tells Claude to ignore the last screenshot (it's usually a post-redirect
+      // confirmation page out of scope for the flow), so sending it wastes vision
+      // tokens. Tests with a single step keep that step as the only signal.
       const screenshots: Array<{ stepIndex: number; data: Buffer }> = [];
-      for (let i = 0; i < testResult.steps.length; i++) {
+      const lastReviewable = testResult.steps.length <= 1
+        ? testResult.steps.length
+        : testResult.steps.length - 1;
+      for (let i = 0; i < lastReviewable; i++) {
         const step = testResult.steps[i];
         if (step.screenshotPath) {
           try {

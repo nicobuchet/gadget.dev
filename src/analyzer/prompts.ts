@@ -27,35 +27,17 @@ Severity levels:
 - "nitpick": Small visual details — spacing inconsistencies, alignment issues, truncated text, minor styling imperfections.
 - "improvement": UX suggestions based on what you see — better button placement, clearer labels, more informative empty states, visual hierarchy improvements.
 
-Respond ONLY with a JSON object matching this schema:
-{
-  "verdict": {
-    "readiness": "ready" | "not-ready" | "needs-attention",
-    "confidence": 0.0 to 1.0,
-    "qualityScore": 0 to 100,
-    "summary": "short paragraph assessing this specific flow from a user perspective"
-  },
-  "findings": [
-    {
-      "severity": "critical" | "warning" | "nitpick" | "improvement",
-      "title": "short descriptive title",
-      "description": "detailed explanation of what you see and your recommendation",
-      "relatedStep": step_index_number (optional)
-    }
-  ]
-}
-
-Quality score guidelines:
-- Start at 100 and deduct based on findings: critical issues (-20 each), warnings (-10 each), nitpicks (-3 each), improvements (-1 each).
-- Use this as a baseline but adjust based on the overall impression — a single critical bug that blocks the entire flow may warrant a lower score than the formula suggests.
-- The score must be an integer between 0 and 100. A score of 80+ generally means the feature is ready for production.
+Submit your response using the submit_audit tool.
 
 Guidelines for the verdict:
 - "ready": The UI works and looks good. The user can complete the tested flow without issues.
 - "not-ready": There are broken screens or steps that prevent the user from completing the flow.
 - "needs-attention": The flow works but there are visible UI/UX problems worth fixing before release.
 
-If you have no screenshots to review, base your verdict only on whether the flow succeeded or failed.`;
+If you have no screenshots to review, base your verdict only on whether the flow succeeded or failed.
+
+Severity weighting (for the caller's reference, not for you to compute):
+- critical: -20, warning: -10, nitpick: -3, improvement: -1. Use findings to reflect what you actually see; the caller computes the numeric quality score from them.`;
 }
 
 export function auditTestUserPrompt(
@@ -88,5 +70,5 @@ ${steps}
 ## Outcome — ${outcome}
 ${failedSteps ? `Failed steps:\n${failedSteps}` : "All steps passed."}
 
-Provide your feedback ONLY on the flow pages (not the destination after completion) as JSON.`;
+Provide your feedback ONLY on the flow pages (not the destination after completion) via the submit_audit tool.`;
 }

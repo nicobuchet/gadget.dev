@@ -6,13 +6,18 @@ import { ClaudeProvider } from "./claude.js";
  * is configured or the required API key is missing.
  */
 export function createProvider(config: GadgetConfig): AIProvider | null {
-  const { provider, apiKey, model, maxTokens } = config.ai;
+  const { provider, apiKey, model, generateModel, auditModel, maxTokens } = config.ai;
 
   switch (provider) {
     case "claude": {
       const key = apiKey || process.env.ANTHROPIC_API_KEY;
       if (!key) return null;
-      return new ClaudeProvider(key, model, maxTokens);
+      return new ClaudeProvider(key, {
+        model,
+        generateModel,
+        auditModel,
+        maxTokens,
+      });
     }
     case "openai": {
       const key = apiKey || process.env.OPENAI_API_KEY;

@@ -105,6 +105,8 @@ export const GadgetConfigSchema = z.object({
     .object({
       provider: z.string().default("claude"),
       model: z.string().optional(),
+      generateModel: z.string().optional(),
+      auditModel: z.string().optional(),
       apiKey: z.string().optional(),
       maxTokens: z.number().default(1024),
     })
