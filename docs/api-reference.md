@@ -90,7 +90,9 @@ List available AI providers with their configuration status.
 ```yaml
 ai:
   provider: "claude"                      # claude | openai | none
-  model: "claude-sonnet-4-6"              # model identifier
+  model: "claude-sonnet-4-6"              # fallback model for both tasks
+  generateModel: "claude-haiku-4-5"       # optional — overrides `model` for `gadget check`
+  auditModel: "claude-sonnet-4-6"         # optional — overrides `model` for `gadget audit`
   apiKey: "{{ env.ANTHROPIC_API_KEY }}"   # supports env var interpolation
   maxTokens: 1024                         # max output tokens
 
@@ -369,6 +371,8 @@ type GadgetConfig = {
   ai: {
     provider: string;
     model?: string;
+    generateModel?: string;
+    auditModel?: string;
     apiKey?: string;
     maxTokens?: number;
   };

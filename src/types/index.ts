@@ -155,6 +155,11 @@ export interface GadgetConfig {
   ai: {
     provider: string;
     model?: string;
+    // Optional per-task model overrides. When unset, fall back to `model`.
+    // Useful for routing `gadget check` (YAML generation) to a cheaper Haiku
+    // while keeping `gadget audit` (vision reasoning) on Sonnet.
+    generateModel?: string;
+    auditModel?: string;
     apiKey?: string;
     maxTokens?: number;
   };

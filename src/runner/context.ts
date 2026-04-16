@@ -19,6 +19,10 @@ export class TestBrowserContext {
 
     const context = await this.browser.newContext({
       viewport: config.browser.viewport,
+      // Force 1x pixel density — screenshots go to Claude's vision model where
+      // retina 2x capture doubles image tokens for no quality gain (Anthropic
+      // downsamples above ~1568px on the longest side anyway).
+      deviceScaleFactor: 1,
     });
     this.contexts.push(context);
     return context.newPage();
@@ -26,7 +30,11 @@ export class TestBrowserContext {
 
   async screenshot(page: Page, outputPath: string): Promise<Buffer> {
     mkdirSync(dirname(outputPath), { recursive: true });
-    const buffer = await page.screenshot({ path: outputPath, fullPage: true });
+    const buffer = await page.screenshot({
+      path: outputPath,
+      fullPage: true,
+      scale: "css",
+    });
     return Buffer.from(buffer);
   }
 

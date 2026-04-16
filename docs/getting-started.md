@@ -169,7 +169,9 @@ The `run` command works fully without AI — no API key needed.
 ```yaml
 ai:
   provider: claude                        # claude | openai | none
-  model: claude-sonnet-4-6                 # model to use
+  model: claude-sonnet-4-6                # fallback for both tasks
+  # generateModel: claude-haiku-4-5       # optional override for `gadget check`
+  # auditModel: claude-sonnet-4-6         # optional override for `gadget audit`
   apiKey: "{{ env.ANTHROPIC_API_KEY }}"   # API key (supports env vars)
   maxTokens: 1024
 
