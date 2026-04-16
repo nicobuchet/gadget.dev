@@ -1,6 +1,6 @@
 {
   "name": "@pyratzlabs/gadget",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "AI-powered E2E testing CLI tool",
   "packageManager": "pnpm@10.8.1",
