@@ -75,5 +75,13 @@ export function parseConfig(projectRoot: string): GadgetConfig | null {
     }
   }
 
+  if (parsed.audit?.linear?.apiKey) {
+    const envMatch = parsed.audit.linear.apiKey.match(/\{\{\s*env\.(\w+)\s*\}\}/);
+    if (envMatch) {
+      const envValue = process.env[envMatch[1]];
+      parsed.audit.linear.apiKey = envValue ?? undefined;
+    }
+  }
+
   return parsed;
 }

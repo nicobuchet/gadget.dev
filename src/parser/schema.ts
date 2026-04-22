@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { StepDefinition } from "../types/index.js";
+import type { FeedbackSeverity, StepDefinition } from "../types/index.js";
 
 // ── Step Schemas ──
 
@@ -133,6 +133,25 @@ export const GadgetConfigSchema = z.object({
     .object({
       maxTokens: z.number().default(4096),
       minScore: z.number().min(0).max(100).optional(),
+      linear: z
+        .object({
+          enabled: z.boolean().default(false),
+          apiKey: z.string().optional(),
+          teamId: z.string().optional(),
+          projectId: z.string().optional(),
+          createForSeverities: z
+            .array(
+              z.enum([
+                "critical",
+                "warning",
+                "nitpick",
+                "improvement",
+              ] satisfies [FeedbackSeverity, ...FeedbackSeverity[]]),
+            )
+            .default(["critical", "warning", "nitpick", "improvement"]),
+          titlePrefix: z.string().default("[Gadget Audit]"),
+        })
+        .optional(),
     })
     .optional(),
   check: z

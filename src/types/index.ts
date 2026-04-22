@@ -127,6 +127,7 @@ export interface AuditFinding {
   severity: FeedbackSeverity;
   title: string;
   description: string;
+  issueKey?: string;
   relatedTest?: string;
   relatedStep?: number;
   screenshotPath?: string;
@@ -147,6 +148,7 @@ export interface AuditReport {
   suiteResult: SuiteResult;
   timestamp: string;
   duration: number;
+  linear?: LinearSyncResult;
 }
 
 // ── Configuration ──
@@ -181,6 +183,14 @@ export interface GadgetConfig {
   audit?: {
     maxTokens?: number;
     minScore?: number;
+    linear?: {
+      enabled?: boolean;
+      apiKey?: string;
+      teamId?: string;
+      projectId?: string;
+      createForSeverities?: FeedbackSeverity[];
+      titlePrefix?: string;
+    };
   };
 }
 
@@ -209,4 +219,32 @@ export interface ReporterInterface {
   onTestEnd(result: TestResult): void;
   onSuiteEnd(result: SuiteResult): void;
   onAuditEnd?(report: AuditReport): void;
+}
+
+export interface LinearIssueReference {
+  id: string;
+  identifier?: string;
+  url?: string;
+  title: string;
+  issueKey: string;
+  findingCount: number;
+}
+
+export interface LinearSyncFailure {
+  issueKey: string;
+  title: string;
+  reason: string;
+}
+
+export interface LinearSyncSkip {
+  issueKey: string;
+  title: string;
+  reason: string;
+}
+
+export interface LinearSyncResult {
+  created: LinearIssueReference[];
+  updated: LinearIssueReference[];
+  skipped: LinearSyncSkip[];
+  failed: LinearSyncFailure[];
 }

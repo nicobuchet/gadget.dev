@@ -32,6 +32,15 @@ gadget audit tests/ --base-url https://staging.myapp.com
 
 Gadget runs every test flow with screenshots at each step, then sends them to Claude to evaluate the UI from a real user's perspective. You get a verdict (**ready**, **not-ready**, or **needs-attention**), a quality score (0-100), and actionable findings.
 
+To sync audit findings into Linear tickets:
+
+```bash
+export LINEAR_API_KEY="lin_api_..."
+gadget audit tests/ --base-url https://staging.myapp.com --linear --linear-team <team-id>
+```
+
+Gadget creates tickets with a `[Gadget Audit]` prefix, includes the audit description and screenshots, and avoids opening a duplicate when it finds an existing open Gadget-created issue for the same finding.
+
 ## Writing Tests
 
 Tests are YAML files with a `name`, optional `config`/`variables`, and a list of `steps`:
@@ -99,6 +108,12 @@ A score of **80+** generally means production-ready. Use `--min-score` as a CI g
 
 ```bash
 gadget audit tests/ --base-url https://staging.myapp.com --min-score 80
+```
+
+You can also sync findings to Linear during the audit:
+
+```bash
+gadget audit tests/ --base-url https://staging.myapp.com --linear --linear-team <team-id>
 ```
 
 ## Reporters

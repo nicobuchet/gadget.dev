@@ -10,6 +10,10 @@ import { createReporters } from "../reporter/reporter.js";
 import { createProvider } from "../analyzer/providers/provider.js";
 import { Analyzer } from "../analyzer/analyzer.js";
 import { check } from "../checker/generator.js";
+import {
+  resolveLinearConfig,
+  syncAuditReportToLinear,
+} from "../integrations/linear.js";
 import type { TestCase, GadgetConfig, AuditReport } from "../types/index.js";
 import { DEFAULT_CONFIG } from "../types/index.js";
 
@@ -165,6 +169,9 @@ program
   .option("--stop-on-failure", "stop on first failure")
   .option("--settle <ms>", "wait time (ms) after each step for page to settle before screenshot", parseInt)
   .option("--min-score <score>", "minimum quality score (0-100) to pass the audit", parseInt)
+  .option("--linear", "create or update Linear tickets from audit findings")
+  .option("--linear-team <id>", "override Linear team ID for audit ticket sync")
+  .option("--linear-project <id>", "override Linear project ID for audit ticket sync")
   .action(async (paths: string[], options) => {
     try {
       const auditStart = Date.now();
@@ -179,6 +186,19 @@ program
       // Load config
       const fileConfig = parseConfig(process.cwd());
       const config = mergeConfig(fileConfig, options);
+      const linearOverrides = {
+        enabled: options.linear === true,
+        teamId: options.linearTeam as string | undefined,
+        projectId: options.linearProject as string | undefined,
+      };
+
+      try {
+        resolveLinearConfig(config, linearOverrides);
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : err);
+        process.exitCode = 2;
+        return;
+      }
 
       // AI provider is required for audit
       const provider = createProvider(config);
@@ -265,6 +285,25 @@ program
         duration: Date.now() - auditStart,
       };
 
+      try {
+        const linearResult = await syncAuditReportToLinear(report, config, linearOverrides);
+        if (linearResult) {
+          report.linear = linearResult;
+        }
+      } catch (err) {
+        report.linear = {
+          created: [],
+          updated: [],
+          skipped: [],
+          failed: [{
+            issueKey: "linear-sync",
+            title: "Linear sync",
+            reason: err instanceof Error ? err.message : String(err),
+          }],
+        };
+        console.error(`Linear sync failed: ${report.linear.failed[0].reason}`);
+      }
+
       // Notify reporters of audit completion
       reporter.onAuditEnd?.(report);
 
@@ -337,6 +376,16 @@ output:
   dir: ".gadget/results"
   reporters:
     - console
+
+audit:
+  # minScore: 80
+  # linear:
+  #   enabled: false
+  #   apiKey: "{{ env.LINEAR_API_KEY }}"
+  #   teamId: "your-linear-team-id"
+  #   # projectId: "optional-linear-project-id"
+  #   # createForSeverities: [critical, warning, nitpick, improvement]
+  #   # titlePrefix: "[Gadget Audit]"
 `;
 
     const exampleTest = `name: Example Test

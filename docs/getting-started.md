@@ -184,6 +184,16 @@ output:
   dir: ".gadget/results"
   reporters:
     - console
+
+audit:
+  # minScore: 80
+  # linear:
+  #   enabled: false
+  #   apiKey: "{{ env.LINEAR_API_KEY }}"
+  #   teamId: "your-linear-team-id"
+  #   # projectId: "optional-linear-project-id"
+  #   # createForSeverities: [critical, warning, nitpick, improvement]
+  #   # titlePrefix: "[Gadget Audit]"
 ```
 
 ### CLI Options
@@ -211,6 +221,9 @@ gadget audit <paths...>     Run tests + AI production readiness assessment
   --stop-on-failure         Stop on first failure
   --settle <ms>             Wait time after each step before screenshot
   --min-score <n>           Minimum quality score (0-100) to pass the audit
+  --linear                  Create or update Linear tickets from audit findings
+  --linear-team <id>        Override Linear team ID for ticket sync
+  --linear-project <id>     Override Linear project ID for ticket sync
 
 gadget validate <paths...>  Validate test files without running
 gadget init                 Scaffold config and example test
@@ -250,6 +263,17 @@ Use `--min-score` to fail the audit if the score is below a threshold:
 # Fail if quality score is below 80
 pnpm exec gadget audit tests/ --base-url https://staging.myapp.com --min-score 80
 ```
+
+### Linear tickets
+
+Use `--linear` to create or update Linear tickets directly from audit findings:
+
+```bash
+export LINEAR_API_KEY="lin_api_..."
+pnpm exec gadget audit tests/ --base-url https://staging.myapp.com --linear --linear-team <team-id>
+```
+
+Gadget prefixes created issues with `[Gadget Audit]`, includes the audit description plus screenshots, and adds a comment instead of creating a duplicate when it finds an existing open Gadget-created ticket for the same finding.
 
 You can also set the threshold in `.gadgetrc.yaml`:
 
@@ -292,6 +316,13 @@ Add an optional `audit` section to `.gadgetrc.yaml`:
 audit:
   maxTokens: 4096    # max output tokens for the AI audit response
   minScore: 80       # fail if quality score is below this threshold (0-100)
+  linear:
+    enabled: false
+    apiKey: "{{ env.LINEAR_API_KEY }}"
+    teamId: "your-linear-team-id"
+    # projectId: "optional-linear-project-id"
+    # createForSeverities: [critical, warning, nitpick, improvement]
+    # titlePrefix: "[Gadget Audit]"
 ```
 
 ## Reporters

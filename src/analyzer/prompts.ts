@@ -29,6 +29,11 @@ Severity levels:
 
 Submit your response using the submit_audit tool.
 
+Ticket deduplication:
+- For each finding, include an "issueKey" that stays stable across reruns when the same underlying UI/UX problem is present.
+- Keep issueKey short, slug-like, and specific to the actual problem (example: "signup-submit-button-hidden").
+- Reuse the same issueKey if the same problem appears in multiple screenshots or future audits.
+
 Guidelines for the verdict:
 - "ready": The UI works and looks good. The user can complete the tested flow without issues.
 - "not-ready": There are broken screens or steps that prevent the user from completing the flow.
@@ -70,5 +75,10 @@ ${steps}
 ## Outcome — ${outcome}
 ${failedSteps ? `Failed steps:\n${failedSteps}` : "All steps passed."}
 
-Provide your feedback ONLY on the flow pages (not the destination after completion) via the submit_audit tool.`;
+Provide your feedback ONLY on the flow pages (not the destination after completion) via the submit_audit tool.
+
+For every finding, provide:
+- a short actionable title
+- a clear description focused on what the user sees and why it is a problem
+- a stable issueKey for deduplicating tickets across audit runs.`;
 }

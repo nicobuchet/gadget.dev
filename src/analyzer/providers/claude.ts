@@ -24,6 +24,7 @@ const AuditResponseSchema = z.object({
     severity: z.enum(["critical", "warning", "nitpick", "improvement"]),
     title: z.string(),
     description: z.string(),
+    issueKey: z.string().optional(),
     relatedStep: z.number().optional(),
   })),
 });
@@ -71,6 +72,11 @@ const AUDIT_TOOL: Anthropic.Tool = {
             },
             title: { type: "string" },
             description: { type: "string" },
+            issueKey: {
+              type: "string",
+              description:
+                "Stable slug-like key for deduplicating the same underlying issue across audit reruns.",
+            },
             relatedStep: {
               type: "number",
               description: "0-based step index this finding applies to, if any.",
