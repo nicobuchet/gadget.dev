@@ -36,6 +36,9 @@ Run tests and produce an AI-powered production readiness assessment.
 | `--stop-on-failure` | Stop on first failure | `false` |
 | `--settle <ms>` | Wait time after each step before screenshot | — |
 | `--min-score <n>` | Minimum quality score (0–100) to pass | — |
+| `--linear` | Create or update Linear tickets from audit findings | `false` |
+| `--linear-team <id>` | Override Linear team ID for ticket sync | — |
+| `--linear-project <id>` | Override Linear project ID for ticket sync | — |
 
 The JSON reporter is always included automatically.
 
@@ -111,6 +114,13 @@ output:
 audit:                                    # audit command only
   maxTokens: 4096
   minScore: 80                            # fail if score below this (0-100)
+  linear:
+    enabled: false
+    apiKey: "{{ env.LINEAR_API_KEY }}"
+    teamId: "your-linear-team-id"
+    projectId: "optional-linear-project-id"
+    createForSeverities: ["critical", "warning", "nitpick", "improvement"]
+    titlePrefix: "[Gadget Audit]"
 
 check:                                    # check command only
   baseBranch: "main"

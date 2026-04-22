@@ -102,6 +102,21 @@ export class ConsoleReporter implements ReporterInterface {
       }
     }
 
+    if (report.linear) {
+      console.log(chalk.bold("\n  LINEAR SYNC"));
+      console.log(chalk.green(`    Created: ${report.linear.created.length}`));
+      console.log(chalk.yellow(`    Updated: ${report.linear.updated.length}`));
+      if (report.linear.skipped.length > 0) {
+        console.log(chalk.gray(`    Skipped: ${report.linear.skipped.length}`));
+      }
+      if (report.linear.failed.length > 0) {
+        console.log(chalk.red(`    Failed: ${report.linear.failed.length}`));
+        for (const failure of report.linear.failed) {
+          console.log(chalk.red(`      ${failure.title}: ${failure.reason}`));
+        }
+      }
+    }
+
     console.log(chalk.bold("\n═════════════════════════════════\n"));
   }
 }
