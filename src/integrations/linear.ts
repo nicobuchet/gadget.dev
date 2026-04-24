@@ -399,14 +399,27 @@ export class LinearClient {
     marker: string,
     projectId?: string,
   ): Promise<LinearIssueNode | null> {
-    const projectFilter = projectId
-      ? "\n            project: { id: { eq: $projectId } }"
-      : "";
-    const query = `query FindOpenIssue($teamId: String!, $marker: String!, $projectId: String) {
+    const query = projectId
+      ? `query FindOpenIssue($teamId: String!, $marker: String!, $projectId: String!) {
       team(id: $teamId) {
         issues(filter: {
           description: { contains: $marker }
-          state: { type: { nin: ["completed", "canceled"] } }${projectFilter}
+          state: { type: { nin: ["completed", "canceled"] } }
+          project: { id: { eq: $projectId } }
+        }) {
+          nodes {
+            id
+            identifier
+            title
+          }
+        }
+      }
+    }`
+      : `query FindOpenIssue($teamId: String!, $marker: String!) {
+      team(id: $teamId) {
+        issues(filter: {
+          description: { contains: $marker }
+          state: { type: { nin: ["completed", "canceled"] } }
         }) {
           nodes {
             id
@@ -416,10 +429,11 @@ export class LinearClient {
         }
       }
     }`;
+    const variables = projectId ? { teamId, marker, projectId } : { teamId, marker };
 
     const data = await this.request<{
       team: { issues: { nodes: LinearIssueNode[] } } | null;
-    }>(query, { teamId, marker, projectId });
+    }>(query, variables);
 
     return data.team?.issues.nodes[0] ?? null;
   }
@@ -539,17 +553,23 @@ export class LinearClient {
       body: JSON.stringify({ query, variables }),
     });
 
+    const payload = await parseLinearGraphQLResponse<TData>(response);
+
     if (!response.ok) {
-      throw new Error(`Linear GraphQL request failed with HTTP ${response.status}.`);
+      const details = formatLinearGraphQLErrors(payload.errors);
+      throw new Error(
+        details
+          ? `Linear GraphQL request failed with HTTP ${response.status}: ${details}`
+          : `Linear GraphQL request failed with HTTP ${response.status}.`,
+      );
     }
 
-    const payload = await response.json() as {
-      data?: TData;
-      errors?: Array<{ message?: string }>;
-    };
+    if (payload.parseError) {
+      throw new Error(`Linear GraphQL response could not be parsed: ${payload.parseError}`);
+    }
 
     if (payload.errors?.length) {
-      throw new Error(payload.errors.map(error => error.message ?? "Unknown GraphQL error").join("; "));
+      throw new Error(formatLinearGraphQLErrors(payload.errors));
     }
 
     if (!payload.data) {
@@ -558,4 +578,38 @@ export class LinearClient {
 
     return payload.data;
   }
+}
+
+interface LinearGraphQLError {
+  message?: string;
+}
+
+interface LinearGraphQLPayload<TData> {
+  data?: TData;
+  errors?: LinearGraphQLError[];
+  parseError?: string;
+}
+
+async function parseLinearGraphQLResponse<TData>(
+  response: Response,
+): Promise<LinearGraphQLPayload<TData>> {
+  const text = await response.text();
+  if (!text.trim()) return {};
+
+  try {
+    return JSON.parse(text) as {
+      data?: TData;
+      errors?: LinearGraphQLError[];
+    };
+  } catch (error) {
+    return {
+      parseError: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function formatLinearGraphQLErrors(errors: LinearGraphQLError[] | undefined): string {
+  return errors?.length
+    ? errors.map(error => error.message ?? "Unknown GraphQL error").join("; ")
+    : "";
 }

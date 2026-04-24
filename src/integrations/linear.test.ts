@@ -279,6 +279,9 @@ describe("linear integration", () => {
     });
 
     const createIssueRequest = requests.find(request => request.query?.includes("CreateIssue"));
+    const findIssueRequest = requests.find(request => request.query?.includes("FindOpenIssue"));
+    expect(findIssueRequest?.query).not.toContain("$projectId");
+    expect(findIssueRequest?.variables).not.toHaveProperty("projectId");
     expect(createIssueRequest?.variables?.input).toMatchObject({
       teamId: "team-123",
       title: "[Gadget Audit] Submit button is clipped",
@@ -373,11 +376,107 @@ describe("linear integration", () => {
     expect(String((createCommentRequest?.variables?.input as { body: string }).body))
       .toContain("_Gadget audit saw this issue again._");
   });
+
+  it("filters existing Linear issues by project when one is configured", async () => {
+    const report = makeReport();
+    const config = makeConfig();
+    config.audit!.linear!.projectId = "project-123";
+
+    const requests: Array<{ query?: string; variables?: Record<string, unknown>; url: string }> = [];
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+      if (url === "https://upload.linear.test/file") {
+        requests.push({ url });
+        return new Response(null, { status: 200 });
+      }
+
+      const body = init?.body ? JSON.parse(String(init.body)) as { query: string; variables: Record<string, unknown> } : undefined;
+      requests.push({ url, query: body?.query, variables: body?.variables });
+
+      if (body?.query?.includes("FindOpenIssue")) {
+        return json({
+          data: {
+            team: {
+              issues: {
+                nodes: [],
+              },
+            },
+          },
+        });
+      }
+
+      if (body?.query?.includes("FileUpload")) {
+        return json({
+          data: {
+            fileUpload: {
+              success: true,
+              uploadFile: {
+                uploadUrl: "https://upload.linear.test/file",
+                assetUrl: "https://assets.linear.test/file.png",
+                headers: [],
+              },
+            },
+          },
+        });
+      }
+
+      if (body?.query?.includes("CreateIssue")) {
+        return json({
+          data: {
+            issueCreate: {
+              success: true,
+              issue: {
+                id: "issue-1",
+                identifier: "GAD-1",
+                title: "[Gadget Audit] Submit button is clipped",
+              },
+            },
+          },
+        });
+      }
+
+      throw new Error(`Unexpected GraphQL operation: ${body?.query}`);
+    });
+
+    await syncAuditReportToLinear(report, config, {}, { fetch: fetchMock });
+
+    const findIssueRequest = requests.find(request => request.query?.includes("FindOpenIssue"));
+    expect(findIssueRequest?.query).toContain("$projectId: String!");
+    expect(findIssueRequest?.query).toContain("project: { id: { eq: $projectId } }");
+    expect(findIssueRequest?.variables?.projectId).toBe("project-123");
+  });
+
+  it("includes Linear GraphQL error details for failed HTTP responses", async () => {
+    const report = makeReport();
+    const fetchMock = vi.fn(async () => json(
+      {
+        errors: [
+          {
+            message: "Variable \"$projectId\" is never used in operation \"FindOpenIssue\".",
+          },
+        ],
+      },
+      400,
+    ));
+
+    const result = await syncAuditReportToLinear(
+      report,
+      makeConfig(),
+      {},
+      { fetch: fetchMock },
+    );
+
+    expect(result?.failed).toHaveLength(1);
+    expect(result?.failed[0].reason).toBe(
+      "Linear GraphQL request failed with HTTP 400: Variable \"$projectId\" is never used in operation \"FindOpenIssue\".",
+    );
+  });
 });
 
-function json(value: unknown): Response {
+function json(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value), {
-    status: 200,
+    status,
     headers: {
       "Content-Type": "application/json",
     },
